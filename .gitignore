@@ -3,3 +3,4 @@ build
 .xmake
 .execs
 .gdb_history
+compile_commands.json
