@@ -10,7 +10,7 @@
 #include "concord/types_basic.hpp" // for concord::CRS, Datum, Euler
 #include "geotiv/types.hpp"        // for geotiv::RasterCollection
 
-namespace geotiff {
+namespace geotiv {
 
     namespace fs = std::filesystem;
 
@@ -135,4 +135,4 @@ namespace geotiff {
         ofs.write(reinterpret_cast<char *>(bytes.data()), bytes.size());
     }
 
-} // namespace geotiff
+} // namespace geotiv
