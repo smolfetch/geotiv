@@ -35,6 +35,7 @@ namespace geotiv {
         concord::CRS crs = concord::CRS::ENU;
         concord::Datum datum;   // lat=lon=alt=0
         concord::Euler heading; // roll=pitch=0, yaw=0
+        double resolution;      // the representation of one pixel in meters
     };
 
 } // namespace geotiv
