@@ -4,7 +4,8 @@
 #include <string>
 #include <vector>
 
-#include "concord/types_basic.hpp" // for concord::CRS, Datum, Euler
+#include "concord/types_basic.hpp"
+#include "concord/types_grid.hpp"
 
 namespace geotiv {
     using std::uint16_t;
@@ -18,7 +19,7 @@ namespace geotiv {
     };
 
     struct RasterCollection {
-        std::vector<Layer> layers;
+        std::vector<concord::Grid<uint8_t>> layers;
         concord::CRS crs = concord::CRS::ENU;
         concord::Datum datum;   // lat=lon=alt=0
         concord::Euler heading; // roll=pitch=0, yaw=0
