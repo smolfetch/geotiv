@@ -16,7 +16,7 @@
 
 #include "geotiv/types.hpp"
 
-namespace geotiff {
+namespace geotiv {
 
     using std::uint16_t;
     using std::uint32_t;
@@ -212,4 +212,4 @@ namespace geotiff {
         return os;
     }
 
-} // namespace geotiff
+} // namespace geotiv
