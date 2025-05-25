@@ -1,4 +1,3 @@
-// geotiv/writer.hpp
 #pragma once
 
 #include <cstdint>
@@ -56,8 +55,8 @@ namespace geotiv {
         uint32_t firstIFD = p;
 
         // --- 3) Compute IFD offsets ---
-        uint16_t entryCount0 = 8; // first IFD: +ImageDescription +ModelPixelScale
-        uint16_t entryCount1 = 6; // subsequent IFDs: just width, height, spp, cfg, strips
+        uint16_t entryCount0 = 12; // first IFD: basic tags + GeoTIFF tags
+        uint16_t entryCount1 = 9;  // subsequent IFDs: basic tags only
         uint32_t ifdSize0 = 2 + entryCount0 * 12 + 4;
         uint32_t ifdSize1 = 2 + entryCount1 * 12 + 4;
 
@@ -68,48 +67,56 @@ namespace geotiv {
             p += (i == 0 ? ifdSize0 : ifdSize1);
         }
 
-        // --- 4) Build shared ImageDescription & PixelScale ---
+        // --- 4) Build shared data after IFDs ---
+        // ImageDescription
         std::string desc = "CRS " + std::string(rc.crs == concord::CRS::WGS ? "WGS" : "ENU") + " DATUM " +
                            std::to_string(rc.datum.lat) + " " + std::to_string(rc.datum.lon) + " " +
                            std::to_string(rc.datum.alt) + " HEADING " + std::to_string(rc.heading.yaw);
         uint32_t descLen = uint32_t(desc.size() + 1);
-        uint32_t descOffset = ifdOffsets[0] + ifdSize0;
+        uint32_t descOffset = p;
+
+        // PixelScale (3 doubles: X, Y, Z)
         uint32_t scaleOffset = descOffset + descLen;
-        uint32_t totalSize = p + 16; // two doubles = 16 bytes
+
+        // GeoKeyDirectory (simple version - just set coordinate system)
+        uint32_t geoKeyOffset = scaleOffset + 24; // 3 doubles = 24 bytes
+        uint32_t geoKeySize = 32;                 // 8 entries * 4 bytes = 32 bytes
+
+        uint32_t totalSize = geoKeyOffset + geoKeySize;
 
         // --- 5) Allocate final buffer ---
         std::vector<uint8_t> buf(totalSize);
-        size_t o = 0;
+        size_t writePos = 0;
 
         // LE writers
         auto writeLE16 = [&](uint16_t v) {
-            buf[o++] = uint8_t(v & 0xFF);
-            buf[o++] = uint8_t(v >> 8);
+            buf[writePos++] = uint8_t(v & 0xFF);
+            buf[writePos++] = uint8_t(v >> 8);
         };
         auto writeLE32 = [&](uint32_t v) {
-            buf[o++] = uint8_t(v & 0xFF);
-            buf[o++] = uint8_t((v >> 8) & 0xFF);
-            buf[o++] = uint8_t((v >> 16) & 0xFF);
-            buf[o++] = uint8_t((v >> 24) & 0xFF);
+            buf[writePos++] = uint8_t(v & 0xFF);
+            buf[writePos++] = uint8_t((v >> 8) & 0xFF);
+            buf[writePos++] = uint8_t((v >> 16) & 0xFF);
+            buf[writePos++] = uint8_t((v >> 24) & 0xFF);
         };
         auto writeDouble = [&](double d) {
             uint64_t bits;
             std::memcpy(&bits, &d, sizeof(d));
             for (int i = 0; i < 8; ++i) {
-                buf[o++] = uint8_t((bits >> (8 * i)) & 0xFF);
+                buf[writePos++] = uint8_t((bits >> (8 * i)) & 0xFF);
             }
         };
 
         // --- 6) TIFF header ---
-        buf[o++] = 'I';
-        buf[o++] = 'I';      // little‐endian
-        writeLE16(42);       // magic
-        writeLE32(firstIFD); // offset to first IFD
+        buf[writePos++] = 'I';
+        buf[writePos++] = 'I'; // little‐endian
+        writeLE16(42);         // magic
+        writeLE32(firstIFD);   // offset to first IFD
 
         // --- 7) Pixel data strips ---
         for (size_t i = 0; i < N; ++i) {
-            std::memcpy(&buf[o], strips[i].data(), strips[i].size());
-            o += strips[i].size();
+            std::memcpy(&buf[writePos], strips[i].data(), strips[i].size());
+            writePos += strips[i].size();
         }
 
         // --- 8) IFDs ---
@@ -124,31 +131,55 @@ namespace geotiv {
             uint32_t H = uint32_t(g.rows());
             uint32_t S = layer.samplesPerPixel;
             uint32_t PC = layer.planarConfig;
+
             // Tag 256: ImageWidth
             writeLE16(256);
             writeLE16(4);
             writeLE32(1);
             writeLE32(W);
+
             // Tag 257: ImageLength
             writeLE16(257);
             writeLE16(4);
             writeLE32(1);
             writeLE32(H);
-            // Tag 277: SamplesPerPixel
-            writeLE16(277);
+
+            // Tag 258: BitsPerSample
+            writeLE16(258);
             writeLE16(3);
             writeLE32(1);
-            writeLE32(S);
-            // Tag 284: PlanarConfiguration
-            writeLE16(284);
+            writeLE32(8);
+
+            // Tag 259: Compression (1 = uncompressed)
+            writeLE16(259);
             writeLE16(3);
             writeLE32(1);
-            writeLE32(PC);
+            writeLE32(1);
+
+            // Tag 262: PhotometricInterpretation (1 = BlackIsZero)
+            writeLE16(262);
+            writeLE16(3);
+            writeLE32(1);
+            writeLE32(1);
+
             // Tag 273: StripOffsets
             writeLE16(273);
             writeLE16(4);
             writeLE32(1);
             writeLE32(stripOffsets[i]);
+
+            // Tag 277: SamplesPerPixel
+            writeLE16(277);
+            writeLE16(3);
+            writeLE32(1);
+            writeLE32(S);
+
+            // Tag 278: RowsPerStrip
+            writeLE16(278);
+            writeLE16(4);
+            writeLE32(1);
+            writeLE32(H);
+
             // Tag 279: StripByteCounts
             writeLE16(279);
             writeLE16(4);
@@ -161,11 +192,30 @@ namespace geotiv {
                 writeLE16(2);
                 writeLE32(descLen);
                 writeLE32(descOffset);
+
+                // Tag 284: PlanarConfiguration
+                writeLE16(284);
+                writeLE16(3);
+                writeLE32(1);
+                writeLE32(PC);
+
                 // Tag 33550: ModelPixelScaleTag
                 writeLE16(33550);
                 writeLE16(12);
-                writeLE32(2);
+                writeLE32(3);
                 writeLE32(scaleOffset);
+
+                // Tag 34735: GeoKeyDirectoryTag
+                writeLE16(34735);
+                writeLE16(3);
+                writeLE32(8);
+                writeLE32(geoKeyOffset);
+            } else {
+                // Tag 284: PlanarConfiguration
+                writeLE16(284);
+                writeLE16(3);
+                writeLE32(1);
+                writeLE32(PC);
             }
 
             // next IFD pointer
@@ -173,14 +223,31 @@ namespace geotiv {
             writeLE32(next);
         }
 
-        // --- 9) Description text + NUL ---
-        std::memcpy(&buf[descOffset], desc.data(), descLen);
-        buf[descOffset + descLen - 1] = '\0';
+        // --- 9) Write variable-length data ---
 
-        // --- 10) PixelScale doubles X, Y ---
-        size_t s = size_t(scaleOffset);
-        writeDouble(rc.resolution);
-        writeDouble(rc.resolution);
+        // Description text + NUL
+        writePos = descOffset;
+        std::memcpy(&buf[writePos], desc.data(), desc.size());
+        buf[writePos + desc.size()] = '\0';
+
+        // PixelScale doubles: X, Y, Z
+        writePos = scaleOffset;
+        writeDouble(rc.resolution); // X scale
+        writeDouble(rc.resolution); // Y scale
+        writeDouble(0.0);           // Z scale
+
+        // GeoKeyDirectory (minimal version)
+        writePos = geoKeyOffset;
+        writeLE16(1); // KeyDirectoryVersion
+        writeLE16(1); // KeyRevision
+        writeLE16(0); // MinorRevision
+        writeLE16(1); // NumberOfKeys
+
+        // One key entry: GTModelTypeGeoKey
+        writeLE16(1024);                                // GTModelTypeGeoKey
+        writeLE16(0);                                   // TIFFTagLocation (0 means value is in ValueOffset)
+        writeLE16(1);                                   // Count
+        writeLE16(rc.crs == concord::CRS::WGS ? 2 : 1); // 2=Geographic, 1=Projected
 
         return buf;
     }
