@@ -2,10 +2,8 @@
 
 #include <iostream>
 
-#include "concord/types_basic.hpp" // Datum, Euler
-#include "concord/types_grid.hpp"  // Grid<T>
-#include "geotiv/types.hpp"        // RasterCollection, Layer
-#include "geotiv/writter.hpp"      // WriteRasterCollection
+#include "concord/concord.hpp" // Datum, Euler
+#include "geotiv/geotiv.hpp"   // RasterCollection, Layer
 
 int main() {
     try {

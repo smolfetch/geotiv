@@ -4,8 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "concord/types_basic.hpp"
-#include "concord/types_grid.hpp"
+#include "concord/concord.hpp"
 
 namespace geotiv {
 

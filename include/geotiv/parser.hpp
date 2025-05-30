@@ -11,8 +11,7 @@
 #include <string>
 #include <vector>
 
-#include "concord/types_basic.hpp" // for CRS, Datum, Euler
-#include "concord/types_grid.hpp"
+#include "concord/concord.hpp" // for CRS, Datum, Euler
 
 #include "geotiv/types.hpp"
 

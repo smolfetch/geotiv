@@ -13,7 +13,7 @@ buildit() {
         mkdir "$TOP_HEAD/build"
     fi
     cd "$TOP_HEAD/build"
-    cmake -Wno-dev ..
+    cmake -Wno-dev -DGEOTIV_BUILD_EXAMPLES=ON ..
     cd "$CURR_DIR"
 }
 

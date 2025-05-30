@@ -8,9 +8,8 @@
 #include <string>
 #include <vector>
 
-#include "concord/types_basic.hpp" // concord::CRS, Datum, Euler
-#include "concord/types_grid.hpp"  // concord::Grid<T>
-#include "geotiv/types.hpp"        // RasterCollection
+#include "concord/concord.hpp" // concord::CRS, Datum, Euler
+#include "geotiv/types.hpp"    // RasterCollection
 
 namespace geotiv {
     namespace fs = std::filesystem;
