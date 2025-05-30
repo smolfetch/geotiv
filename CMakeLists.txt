@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.15)
 
 set(project_name geotiv)
 
-project(${project_name} VERSION 0.1.1 LANGUAGES CXX)
+project(${project_name} VERSION 0.1.2 LANGUAGES CXX)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wall -Wextra -Wpedantic)
