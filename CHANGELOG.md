@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.2.1] - 2025-06-11
+
+### <!-- 1 -->🐛 Bug Fixes
+
+- Rename geotiff namespace to geotiv
+
 ## [0.2.0] - 2025-06-11
 
 ### <!-- 0 -->⛰️  Features
