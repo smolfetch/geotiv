@@ -370,7 +370,6 @@ namespace geotiff {
                 }
             } else { // Planar format
                 // Take first plane only
-                size_t planeSize = size_t(L.width) * L.height;
                 size_t idx = 0;
                 for (uint32_t r = 0; r < L.height; ++r) {
                     for (uint32_t c = 0; c < L.width; ++c) {
