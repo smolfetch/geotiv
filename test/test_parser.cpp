@@ -6,9 +6,6 @@
 
 TEST_CASE("GeoTIFF Parser functionality") {
     SUBCASE("Round-trip test: Write then Read") {
-        // Temporarily skip this test until TIFF reading is fixed
-        std::cout << "Skipping round-trip test due to parser issues" << std::endl;
-        return;
         // Create a test raster collection
         size_t rows = 4, cols = 6;
         double cellSize = 1.5;

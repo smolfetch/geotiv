@@ -25,8 +25,9 @@ namespace geotiff {
         inline uint16_t readLE16(std::ifstream &f) {
             uint16_t v = 0;
             f.read(reinterpret_cast<char *>(&v), sizeof(v));
-            if (f.gcount() != sizeof(v))
+            if (f.gcount() != sizeof(v)) {
                 throw std::runtime_error("Failed to read LE16");
+            }
             return v;
         }
 

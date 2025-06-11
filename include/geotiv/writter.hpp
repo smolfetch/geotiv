@@ -54,7 +54,7 @@ namespace geotiv {
         uint32_t firstIFD = p;
 
         // --- 3) Compute IFD offsets ---
-        uint16_t entryCount0 = 12; // first IFD: basic tags + GeoTIFF tags
+        uint16_t entryCount0 = 13; // first IFD: basic tags + GeoTIFF tags
         uint16_t entryCount1 = 9;  // subsequent IFDs: basic tags only
         uint32_t ifdSize0 = 2 + entryCount0 * 12 + 4;
         uint32_t ifdSize1 = 2 + entryCount1 * 12 + 4;
@@ -120,6 +120,9 @@ namespace geotiv {
 
         // --- 8) IFDs ---
         for (size_t i = 0; i < N; ++i) {
+            // Seek to the correct IFD position
+            writePos = ifdOffsets[i];
+            
             bool first = (i == 0);
             uint16_t ec = first ? entryCount0 : entryCount1;
             writeLE16(ec);
