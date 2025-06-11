@@ -15,7 +15,7 @@ namespace geotiv {
     namespace fs = std::filesystem;
 
     /// Write out all layers in rc as a chained‐IFD GeoTIFF.
-    /// All IFDs share the same CRS/DATUM/HEADING/PixelScale (only in the first IFD).
+    /// Each IFD can have its own CRS/DATUM/HEADING/PixelScale and custom tags.
     inline std::vector<uint8_t> toTiffBytes(RasterCollection const &rc) {
         size_t N = rc.layers.size();
         if (N == 0)
@@ -53,35 +53,76 @@ namespace geotiv {
         }
         uint32_t firstIFD = p;
 
-        // --- 3) Compute IFD offsets ---
-        uint16_t entryCount0 = 13; // first IFD: basic tags + GeoTIFF tags
-        uint16_t entryCount1 = 9;  // subsequent IFDs: basic tags only
-        uint32_t ifdSize0 = 2 + entryCount0 * 12 + 4;
-        uint32_t ifdSize1 = 2 + entryCount1 * 12 + 4;
+        // --- 3) Prepare per-layer metadata ---
+        std::vector<std::string> descriptions(N);
+        std::vector<uint32_t> descLengths(N);
+        std::vector<uint32_t> descOffsets(N);
+        std::vector<uint32_t> scaleOffsets(N);
+        std::vector<uint32_t> geoKeyOffsets(N);
+
+        for (size_t i = 0; i < N; ++i) {
+            auto const &layer = rc.layers[i];
+
+            // Build ImageDescription for this layer
+            if (!layer.imageDescription.empty()) {
+                descriptions[i] = layer.imageDescription; // Use custom description if provided
+            } else {
+                // Generate geospatial description
+                descriptions[i] = "CRS " + std::string(layer.crs == concord::CRS::WGS ? "WGS" : "ENU") + " DATUM " +
+                                  std::to_string(layer.datum.lat) + " " + std::to_string(layer.datum.lon) + " " +
+                                  std::to_string(layer.datum.alt) + " HEADING " + std::to_string(layer.heading.yaw);
+            }
+
+            descLengths[i] = uint32_t(descriptions[i].size() + 1);
+        }
+
+        // --- 4) Compute IFD offsets and sizes ---
+        std::vector<uint16_t> entryCounts(N);
+        std::vector<uint32_t> customDataOffsets(N);
+        std::vector<uint32_t> customDataSizes(N);
+
+        for (size_t i = 0; i < N; ++i) {
+            // Base tags: 9 standard + ImageDescription + PlanarConfig + ModelPixelScale + GeoKeyDirectory + custom tags
+            entryCounts[i] = 9 + 1 + 1 + 1 + 1 + static_cast<uint16_t>(rc.layers[i].customTags.size());
+
+            // Calculate space needed for multi-value custom tag data
+            customDataSizes[i] = 0;
+            for (const auto &[tag, values] : rc.layers[i].customTags) {
+                if (values.size() > 1) {
+                    customDataSizes[i] += static_cast<uint32_t>(values.size() * 4); // 4 bytes per uint32_t
+                }
+            }
+        }
+
+        std::vector<uint32_t> ifdSizes(N);
+        for (size_t i = 0; i < N; ++i) {
+            ifdSizes[i] = 2 + entryCounts[i] * 12 + 4; // entry count + entries + next IFD pointer
+        }
 
         std::vector<uint32_t> ifdOffsets(N);
         p = firstIFD;
         for (size_t i = 0; i < N; ++i) {
             ifdOffsets[i] = p;
-            p += (i == 0 ? ifdSize0 : ifdSize1);
+            p += ifdSizes[i];
         }
 
-        // --- 4) Build shared data after IFDs ---
-        // ImageDescription
-        std::string desc = "CRS " + std::string(rc.crs == concord::CRS::WGS ? "WGS" : "ENU") + " DATUM " +
-                           std::to_string(rc.datum.lat) + " " + std::to_string(rc.datum.lon) + " " +
-                           std::to_string(rc.datum.alt) + " HEADING " + std::to_string(rc.heading.yaw);
-        uint32_t descLen = uint32_t(desc.size() + 1);
-        uint32_t descOffset = p;
+        // --- 5) Compute offsets for variable-length data ---
+        for (size_t i = 0; i < N; ++i) {
+            descOffsets[i] = p;
+            p += descLengths[i];
 
-        // PixelScale (3 doubles: X, Y, Z)
-        uint32_t scaleOffset = descOffset + descLen;
+            scaleOffsets[i] = p;
+            p += 24; // 3 doubles = 24 bytes
 
-        // GeoKeyDirectory (simple version - just set coordinate system)
-        uint32_t geoKeyOffset = scaleOffset + 24; // 3 doubles = 24 bytes
-        uint32_t geoKeySize = 32;                 // 8 entries * 4 bytes = 32 bytes
+            geoKeyOffsets[i] = p;
+            p += 32; // GeoKeyDirectory = 32 bytes
 
-        uint32_t totalSize = geoKeyOffset + geoKeySize;
+            // Custom tag data offset
+            customDataOffsets[i] = p;
+            p += customDataSizes[i];
+        }
+
+        uint32_t totalSize = p;
 
         // --- 5) Allocate final buffer ---
         std::vector<uint8_t> buf(totalSize);
@@ -123,9 +164,7 @@ namespace geotiv {
             // Seek to the correct IFD position
             writePos = ifdOffsets[i];
 
-            bool first = (i == 0);
-            uint16_t ec = first ? entryCount0 : entryCount1;
-            writeLE16(ec);
+            writeLE16(entryCounts[i]);
 
             auto const &layer = rc.layers[i];
             auto const &g = layer.grid;
@@ -164,6 +203,12 @@ namespace geotiv {
             writeLE32(1);
             writeLE32(1);
 
+            // Tag 270: ImageDescription
+            writeLE16(270);
+            writeLE16(2);
+            writeLE32(descLengths[i]);
+            writeLE32(descOffsets[i]);
+
             // Tag 273: StripOffsets
             writeLE16(273);
             writeLE16(4);
@@ -188,36 +233,36 @@ namespace geotiv {
             writeLE32(1);
             writeLE32(stripCounts[i]);
 
-            if (first) {
-                // Tag 270: ImageDescription
-                writeLE16(270);
-                writeLE16(2);
-                writeLE32(descLen);
-                writeLE32(descOffset);
+            // Tag 284: PlanarConfiguration
+            writeLE16(284);
+            writeLE16(3);
+            writeLE32(1);
+            writeLE32(PC);
 
-                // Tag 284: PlanarConfiguration
-                writeLE16(284);
-                writeLE16(3);
-                writeLE32(1);
-                writeLE32(PC);
+            // Tag 33550: ModelPixelScaleTag
+            writeLE16(33550);
+            writeLE16(12);
+            writeLE32(3);
+            writeLE32(scaleOffsets[i]);
 
-                // Tag 33550: ModelPixelScaleTag
-                writeLE16(33550);
-                writeLE16(12);
-                writeLE32(3);
-                writeLE32(scaleOffset);
+            // Tag 34735: GeoKeyDirectoryTag
+            writeLE16(34735);
+            writeLE16(3);
+            writeLE32(8);
+            writeLE32(geoKeyOffsets[i]);
 
-                // Tag 34735: GeoKeyDirectoryTag
-                writeLE16(34735);
-                writeLE16(3);
-                writeLE32(8);
-                writeLE32(geoKeyOffset);
-            } else {
-                // Tag 284: PlanarConfiguration
-                writeLE16(284);
-                writeLE16(3);
-                writeLE32(1);
-                writeLE32(PC);
+            // Write custom tags for this layer
+            uint32_t customDataPos = customDataOffsets[i];
+            for (const auto &[tag, values] : layer.customTags) {
+                writeLE16(tag);
+                writeLE16(4); // LONG type
+                writeLE32(static_cast<uint32_t>(values.size()));
+                if (values.size() == 1) {
+                    writeLE32(values[0]); // Value fits in offset field
+                } else {
+                    writeLE32(customDataPos); // Pointer to data
+                    customDataPos += static_cast<uint32_t>(values.size() * 4);
+                }
             }
 
             // next IFD pointer
@@ -225,31 +270,44 @@ namespace geotiv {
             writeLE32(next);
         }
 
-        // --- 9) Write variable-length data ---
+        // --- 9) Write variable-length data for each layer ---
+        for (size_t i = 0; i < N; ++i) {
+            auto const &layer = rc.layers[i];
 
-        // Description text + NUL
-        writePos = descOffset;
-        std::memcpy(&buf[writePos], desc.data(), desc.size());
-        buf[writePos + desc.size()] = '\0';
+            // Description text + NUL
+            writePos = descOffsets[i];
+            std::memcpy(&buf[writePos], descriptions[i].data(), descriptions[i].size());
+            buf[writePos + descriptions[i].size()] = '\0';
 
-        // PixelScale doubles: X, Y, Z
-        writePos = scaleOffset;
-        writeDouble(rc.resolution); // X scale
-        writeDouble(rc.resolution); // Y scale
-        writeDouble(0.0);           // Z scale
+            // PixelScale doubles: X, Y, Z
+            writePos = scaleOffsets[i];
+            writeDouble(layer.resolution); // X scale
+            writeDouble(layer.resolution); // Y scale
+            writeDouble(0.0);              // Z scale
 
-        // GeoKeyDirectory (minimal version)
-        writePos = geoKeyOffset;
-        writeLE16(1); // KeyDirectoryVersion
-        writeLE16(1); // KeyRevision
-        writeLE16(0); // MinorRevision
-        writeLE16(1); // NumberOfKeys
+            // GeoKeyDirectory for this layer
+            writePos = geoKeyOffsets[i];
+            writeLE16(1); // KeyDirectoryVersion
+            writeLE16(1); // KeyRevision
+            writeLE16(0); // MinorRevision
+            writeLE16(1); // NumberOfKeys
 
-        // One key entry: GTModelTypeGeoKey
-        writeLE16(1024);                                // GTModelTypeGeoKey
-        writeLE16(0);                                   // TIFFTagLocation (0 means value is in ValueOffset)
-        writeLE16(1);                                   // Count
-        writeLE16(rc.crs == concord::CRS::WGS ? 2 : 1); // 2=Geographic, 1=Projected
+            // One key entry: GTModelTypeGeoKey
+            writeLE16(1024);                                   // GTModelTypeGeoKey
+            writeLE16(0);                                      // TIFFTagLocation (0 means value is in ValueOffset)
+            writeLE16(1);                                      // Count
+            writeLE16(layer.crs == concord::CRS::WGS ? 2 : 1); // 2=Geographic, 1=Projected
+
+            // Write custom tag data for this layer
+            writePos = customDataOffsets[i];
+            for (const auto &[tag, values] : layer.customTags) {
+                if (values.size() > 1) {
+                    for (uint32_t value : values) {
+                        writeLE32(value);
+                    }
+                }
+            }
+        }
 
         return buf;
     }

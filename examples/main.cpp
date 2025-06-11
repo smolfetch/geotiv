@@ -32,6 +32,12 @@ int main() {
         L.height = static_cast<uint32_t>(rows);
         L.samplesPerPixel = 1; // single‐band
         L.planarConfig = 1;    // chunky
+        // Set per-layer metadata
+        L.crs = concord::CRS::WGS;
+        L.datum = datum;
+        L.heading = heading;
+        L.resolution = cellSize;
+
         rc.layers.clear();
         rc.layers.push_back(std::move(L));
 

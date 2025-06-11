@@ -275,87 +275,97 @@ namespace geotiv {
                 pixOffset += L.stripByteCounts[i];
             }
 
-            // Parse geotags on first IFD only
-            if (firstIFD) {
-                firstIFD = false;
+            // Parse geotags for each IFD independently
+            concord::CRS layerCRS = concord::CRS::WGS; // default
+            concord::Datum layerDatum;                 // Will be set from ImageDescription or use a valid default
+            concord::Euler layerHeading{0, 0, 0};      // default
+            double layerResolution = 1.0;              // default
+            std::string layerDescription;
+            bool datumFromDescription = false;
 
-                // Parse ImageDescription for CRS/DATUM/HEADING
-                auto itD = E.find(270);
-                if (itD != E.end() && itD->second.type == 2) {
-                    std::string desc = detail::readString(f, itD->second.valueOffset, itD->second.count);
-                    std::istringstream ss(desc);
-                    std::string tok;
+            // Parse ImageDescription for CRS/DATUM/HEADING
+            auto itD = E.find(270);
+            if (itD != E.end() && itD->second.type == 2) {
+                layerDescription = detail::readString(f, itD->second.valueOffset, itD->second.count);
+                std::istringstream ss(layerDescription);
+                std::string tok;
 
-                    bool hasCRS = false, hasDatum = false, hasHeading = false;
-
-                    while (ss >> tok) {
-                        if (tok == "CRS") {
-                            std::string s;
-                            if (ss >> s) {
-                                try {
-                                    rc.crs = detail::parseCRS(s);
-                                    hasCRS = true;
-                                } catch (...) {
-                                    // ignore parse errors for CRS
-                                }
-                            }
-                        } else if (tok == "DATUM") {
-                            if (ss >> rc.datum.lat >> rc.datum.lon >> rc.datum.alt) {
-                                hasDatum = true;
-                            }
-                        } else if (tok == "HEADING") {
-                            double y;
-                            if (ss >> y) {
-                                rc.heading = concord::Euler{0, 0, y};
-                                hasHeading = true;
+                while (ss >> tok) {
+                    if (tok == "CRS") {
+                        std::string s;
+                        if (ss >> s) {
+                            try {
+                                layerCRS = detail::parseCRS(s);
+                            } catch (...) {
+                                // ignore parse errors for CRS
                             }
                         }
+                    } else if (tok == "DATUM") {
+                        if (ss >> layerDatum.lat >> layerDatum.lon >> layerDatum.alt) {
+                            datumFromDescription = true;
+                        }
+                    } else if (tok == "HEADING") {
+                        double y;
+                        if (ss >> y) {
+                            layerHeading = concord::Euler{0, 0, y};
+                        }
                     }
-
-                    if (!hasCRS) {
-                        rc.crs = concord::CRS::WGS; // default
-                    }
-                    if (!hasDatum) {
-                        throw std::runtime_error("Missing or invalid DATUM in ImageDescription");
-                    }
-                    if (!hasHeading) {
-                        rc.heading = concord::Euler{0, 0, 0}; // default
-                    }
-                } else {
-                    // No ImageDescription - set defaults
-                    rc.crs = concord::CRS::WGS;
-                    rc.datum = {0.0, 0.0, 0.0}; // Will need to be set by caller
-                    rc.heading = concord::Euler{0, 0, 0};
-                }
-
-                // ModelPixelScale → resolution
-                auto scales = readDoubles(33550);
-                if (scales.size() >= 2) {
-                    rc.resolution = scales[0]; // X scale
-                    // Could also check that scales[0] == scales[1] for square pixels
-                } else {
-                    rc.resolution = 1.0; // default
-                }
-
-                if (rc.resolution <= 0) {
-                    throw std::runtime_error("Invalid pixel scale: " + std::to_string(rc.resolution));
                 }
             }
 
-            // Build geo-grid using rc.resolution
-            if (!rc.datum.is_set()) {
-                throw std::runtime_error("Datum not properly initialized");
+            // If we didn't get a valid datum from ImageDescription, use a default that passes is_set()
+            if (!datumFromDescription) {
+                layerDatum = {0.001, 0.001, 1.0}; // Valid minimal coordinates
             }
 
-            concord::WGS w0{rc.datum.lat, rc.datum.lon, rc.datum.alt};
-            concord::Point p0{w0, rc.datum};
-            concord::Pose shift{p0, rc.heading};
+            // ModelPixelScale → resolution for this IFD
+            auto scales = readDoubles(33550);
+            if (scales.size() >= 2) {
+                layerResolution = scales[0]; // X scale
+                // Could also check that scales[0] == scales[1] for square pixels
+            }
+
+            if (layerResolution <= 0) {
+                throw std::runtime_error("Invalid pixel scale: " + std::to_string(layerResolution));
+            }
+
+            // Set layer-specific metadata
+            L.crs = layerCRS;
+            L.datum = layerDatum;
+            L.heading = layerHeading;
+            L.resolution = layerResolution;
+            L.imageDescription = layerDescription;
+
+            // Read custom tags (tag numbers 50000 and above are typically custom)
+            for (const auto &[tag, entry] : E) {
+                if (tag >= 50000) {
+                    L.customTags[tag] = readUInts(tag);
+                }
+            }
+
+            // Set collection defaults from first IFD if not set
+            if (firstIFD) {
+                firstIFD = false;
+                rc.crs = layerCRS;
+                rc.datum = layerDatum;
+                rc.heading = layerHeading;
+                rc.resolution = layerResolution;
+            }
+
+            // Build geo-grid using layer-specific resolution and datum
+            if (!L.datum.is_set()) {
+                throw std::runtime_error("Datum not properly initialized for layer");
+            }
+
+            concord::WGS w0{L.datum.lat, L.datum.lon, L.datum.alt};
+            concord::Point p0{w0, L.datum};
+            concord::Pose shift{p0, L.heading};
 
             concord::Grid<uint8_t> grid(
                 /*rows=*/L.height,
                 /*cols=*/L.width,
-                /*diameter=*/rc.resolution,
-                /*datum=*/rc.datum,
+                /*diameter=*/L.resolution,
+                /*datum=*/L.datum,
                 /*centered=*/true,
                 /*shift=*/shift);
 

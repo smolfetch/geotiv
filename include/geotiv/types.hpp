@@ -1,6 +1,7 @@
 #pragma once
 
 #include <filesystem>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -23,6 +24,16 @@ namespace geotiv {
         // strip info
         std::vector<uint32_t> stripOffsets;
         std::vector<uint32_t> stripByteCounts;
+
+        // Per-IFD geospatial metadata (allows different coordinate systems per layer)
+        concord::CRS crs = concord::CRS::WGS;
+        concord::Datum datum;    // lat=lon=alt=0
+        concord::Euler heading;  // roll=pitch=0, yaw=0
+        double resolution = 1.0; // the representation of one pixel in meters
+
+        // Additional GeoTIFF tags per IFD
+        std::string imageDescription;
+        std::map<uint16_t, std::vector<uint32_t>> customTags; // For additional TIFF tags
 
         // the actual samples, geo-gridded
         concord::Grid<uint8_t> grid;

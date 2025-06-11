@@ -36,6 +36,11 @@ TEST_CASE("GeoTIFF Writer functionality") {
         layer.height = static_cast<uint32_t>(rows);
         layer.samplesPerPixel = 1;
         layer.planarConfig = 1;
+        // Set per-layer metadata
+        layer.crs = concord::CRS::WGS;
+        layer.datum = datum;
+        layer.heading = heading;
+        layer.resolution = cellSize;
 
         rc.layers.push_back(std::move(layer));
 
@@ -81,6 +86,11 @@ TEST_CASE("GeoTIFF Writer functionality") {
         layer.height = static_cast<uint32_t>(rows);
         layer.samplesPerPixel = 1;
         layer.planarConfig = 1;
+        // Set per-layer metadata
+        layer.crs = concord::CRS::ENU;
+        layer.datum = datum;
+        layer.heading = heading;
+        layer.resolution = cellSize;
 
         rc.layers.push_back(std::move(layer));
 
@@ -125,6 +135,11 @@ TEST_CASE("GeoTIFF Writer functionality") {
             layer.height = static_cast<uint32_t>(rows);
             layer.samplesPerPixel = 1;
             layer.planarConfig = 1;
+            // Set per-layer metadata - different for each layer
+            layer.crs = concord::CRS::WGS;
+            layer.datum = {datum.lat + layerIdx * 0.01, datum.lon + layerIdx * 0.01, datum.alt + layerIdx * 10};
+            layer.heading = heading;
+            layer.resolution = cellSize + layerIdx * 0.1;
 
             rc.layers.push_back(std::move(layer));
         }

@@ -35,6 +35,11 @@ TEST_CASE("GeoTIFF Parser functionality") {
         layer.height = static_cast<uint32_t>(rows);
         layer.samplesPerPixel = 1;
         layer.planarConfig = 1;
+        // Set per-layer metadata
+        layer.crs = concord::CRS::WGS;
+        layer.datum = datum;
+        layer.heading = heading;
+        layer.resolution = cellSize;
 
         originalRc.layers.push_back(std::move(layer));
 
@@ -63,11 +68,17 @@ TEST_CASE("GeoTIFF Parser functionality") {
         CHECK(readRc.layers[0].width == cols);
         CHECK(readRc.layers[0].height == rows);
         CHECK(readRc.layers[0].samplesPerPixel == 1);
+        // Check both collection-level and layer-level metadata
         CHECK(readRc.crs == concord::CRS::WGS);
+        CHECK(readRc.layers[0].crs == concord::CRS::WGS);
         CHECK(readRc.datum.lat == doctest::Approx(datum.lat).epsilon(0.001));
+        CHECK(readRc.layers[0].datum.lat == doctest::Approx(datum.lat).epsilon(0.001));
         CHECK(readRc.datum.lon == doctest::Approx(datum.lon).epsilon(0.001));
+        CHECK(readRc.layers[0].datum.lon == doctest::Approx(datum.lon).epsilon(0.001));
         CHECK(readRc.datum.alt == doctest::Approx(datum.alt).epsilon(0.1));
+        CHECK(readRc.layers[0].datum.alt == doctest::Approx(datum.alt).epsilon(0.1));
         CHECK(readRc.resolution == doctest::Approx(cellSize).epsilon(0.001));
+        CHECK(readRc.layers[0].resolution == doctest::Approx(cellSize).epsilon(0.001));
 
         // Verify grid dimensions
         const auto &readGrid = readRc.layers[0].grid;
