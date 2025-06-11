@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0] - 2025-06-11
+
+### <!-- 0 -->⛰️  Features
+
+- Add examples for tiff image generation
+- Add support for per-IFD metadata and custom tags
+
 ## [0.2.1] - 2025-06-11
 
 ### <!-- 1 -->🐛 Bug Fixes
