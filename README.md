@@ -23,7 +23,7 @@ A modern C++20 library for reading and writing GeoTIFF files with integrated geo
 #include "geotiv/geotiv.hpp"
 
 // Read a GeoTIFF file
-auto rasterCollection = geotiff::ReadRasterCollection("input.tif");
+auto rasterCollection = geotiv::ReadRasterCollection("input.tif");
 
 // Access georeferenced data
 const auto& layer = rasterCollection.layers[0];
@@ -81,7 +81,7 @@ geotiv::WriteRasterCollection(rc, "generated.tif");
 
 ### I/O Functions
 
-- **`geotiff::ReadRasterCollection()`**: Parse GeoTIFF files into structured data
+- **`geotiv::ReadRasterCollection()`**: Parse GeoTIFF files into structured data
 - **`geotiv::WriteRasterCollection()`**: Export raster collections to GeoTIFF format
 - **`geotiv::toTiffBytes()`**: Generate raw TIFF byte data for custom handling
 

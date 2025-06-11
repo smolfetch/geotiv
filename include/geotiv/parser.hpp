@@ -15,7 +15,7 @@
 
 #include "geotiv/types.hpp"
 
-namespace geotiff {
+namespace geotiv {
     namespace fs = std::filesystem;
 
     // ------------------------------------------------------------------
@@ -407,4 +407,4 @@ namespace geotiff {
         return os;
     }
 
-} // namespace geotiff
+} // namespace geotiv

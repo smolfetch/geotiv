@@ -50,7 +50,7 @@ TEST_CASE("GeoTIFF Parser functionality") {
         // Try reading back - catch and report specific errors
         geotiv::RasterCollection readRc;
         try {
-            readRc = geotiff::ReadRasterCollection(testFile);
+            readRc = geotiv::ReadRasterCollection(testFile);
         } catch (const std::exception &e) {
             // Log the error and re-throw for investigation
             std::cerr << "Failed to read TIFF file: " << e.what() << std::endl;
@@ -84,7 +84,7 @@ TEST_CASE("GeoTIFF Parser functionality") {
     }
 
     SUBCASE("Read non-existent file should throw") {
-        CHECK_THROWS(geotiff::ReadRasterCollection("non_existent_file.tif"));
+        CHECK_THROWS(geotiv::ReadRasterCollection("non_existent_file.tif"));
     }
 
     SUBCASE("Read invalid file should throw") {
@@ -94,7 +94,7 @@ TEST_CASE("GeoTIFF Parser functionality") {
         ofs << "This is not a TIFF file";
         ofs.close();
 
-        CHECK_THROWS(geotiff::ReadRasterCollection(invalidFile));
+        CHECK_THROWS(geotiv::ReadRasterCollection(invalidFile));
 
         // Clean up
         std::filesystem::remove(invalidFile);
@@ -144,7 +144,7 @@ TEST_CASE("GeoTIFF Parser functionality") {
 
         // Read back
         geotiv::RasterCollection readRc;
-        REQUIRE_NOTHROW(readRc = geotiff::ReadRasterCollection(testFile));
+        REQUIRE_NOTHROW(readRc = geotiv::ReadRasterCollection(testFile));
 
         // Verify structure
         CHECK(readRc.layers.size() == 3);
