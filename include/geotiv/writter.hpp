@@ -122,7 +122,7 @@ namespace geotiv {
         for (size_t i = 0; i < N; ++i) {
             // Seek to the correct IFD position
             writePos = ifdOffsets[i];
-            
+
             bool first = (i == 0);
             uint16_t ec = first ? entryCount0 : entryCount1;
             writeLE16(ec);
