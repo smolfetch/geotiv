@@ -2,11 +2,9 @@ cmake_minimum_required(VERSION 3.15)
 
 set(project_name geotiv)
 
-project(${project_name} VERSION 0.1.2 LANGUAGES CXX)
+project(${project_name} VERSION 1.3.3 LANGUAGES CXX)
 
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    add_compile_options(-Wall -Wextra -Wpedantic)
-endif()
+add_compile_options(-Wall -Wextra -Wpedantic)
 cmake_policy(SET CMP0074 NEW)
 cmake_policy(SET CMP0135 NEW)
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
@@ -17,29 +15,24 @@ set(params
     -Wno-reorder
 )
 
-option(GEOTIV_BUILD_EXAMPLES "Build examples" OFF)
+string(TOUPPER ${project_name} project_name_upper)
+option(${project_name_upper}_BUILD_EXAMPLES "Build examples" OFF)
+option(${project_name_upper}_ENABLE_TESTS "Enable tests" OFF)
+include(FetchContent)
 
 # --------------------------------------------------------------------------------------------------
-include(FetchContent)
-FetchContent_Declare(
-  concord
-  GIT_REPOSITORY https://github.com/smolfetch/concord.git
-  GIT_TAG        main
-)
+set(ext_deps)
+FetchContent_Declare(concord GIT_REPOSITORY https://github.com/smolfetch/concord.git GIT_TAG main)
 FetchContent_MakeAvailable(concord)
-# include_directories(${CMAKE_INSTALL_INCLUDEDIR}/concord)
+list(APPEND ext_deps concord::concord)
 
-FetchContent_Declare(
-  pigment
-  GIT_REPOSITORY https://github.com/smolfetch/pigment.git
-  GIT_TAG        main
-)
+FetchContent_Declare(pigment GIT_REPOSITORY https://github.com/smolfetch/pigment.git GIT_TAG main)
 FetchContent_MakeAvailable(pigment)
-# include_directories(${CMAKE_INSTALL_INCLUDEDIR}/pigment)
+list(APPEND ext_deps pigment::pigment)
 
 # --------------------------------------------------------------------------------------------------
 add_library(${project_name} INTERFACE)
-# allow users to link to this target with `target_link_libraries(mytarget geotiv::geotiv)`
+# Allow users to link via `${project_name}::${project_name}`
 add_library(${project_name}::${project_name} ALIAS ${project_name})
 target_include_directories(${project_name} INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -76,14 +69,8 @@ export(EXPORT ${project_name}Targets
 
 
 # --------------------------------------------------------------------------------------------------
-if(GEOTIV_BUILD_EXAMPLES)
-  set(external_deps
-    concord::concord
-    pigment::pigment
-  )
-  set(exe
-    examples/main.cpp
-  )
+if(${project_name_upper}_BUILD_EXAMPLES)
+  file(GLOB exe examples/*.cpp)
   # ----------------------------------------------
   set(exec_names)
   foreach(src_file IN LISTS exe)
@@ -93,7 +80,7 @@ if(GEOTIV_BUILD_EXAMPLES)
         target_compile_options(${exec_name} PRIVATE ${params})
         target_sources(${exec_name} PRIVATE "${lib_file}")
       endforeach()
-    target_link_libraries(${exec_name} ${external_deps})
+    target_link_libraries(${exec_name} ${ext_deps})
     install(TARGETS ${exec_name} DESTINATION bin)
     list(APPEND exec_names ${exec_name})
   endforeach()
@@ -109,4 +96,30 @@ if(GEOTIV_BUILD_EXAMPLES)
     ${exec_names}
     DESTINATION lib/${PROJECT_NAME}
   )
+endif()
+
+
+# --------------------------------------------------------------------------------------------------
+if(${project_name_upper}_ENABLE_TESTS)
+  enable_testing()
+  add_definitions(-DENABLE_DOCTEST_IN_LIBRARY)
+  include(FetchContent)
+  FetchContent_Declare(
+    DocTest
+    GIT_REPOSITORY "https://github.com/onqtam/doctest"
+  )
+  FetchContent_MakeAvailable(DocTest)
+
+  file(GLOB test_src test/*.cpp)
+
+  foreach(src_file IN LISTS test_src)
+    get_filename_component(test_name "${src_file}" NAME_WE)
+    add_executable(${test_name} "${src_file}")
+      foreach(lib_file IN LISTS internal_deps)
+        target_compile_options(${test_name} PRIVATE ${params})
+        target_sources(${test_name} PRIVATE "${lib_file}")
+      endforeach()
+    target_link_libraries(${test_name} ${ext_deps} doctest_with_main)
+    add_test(NAME ${test_name} COMMAND ${test_name})
+  endforeach()
 endif()
