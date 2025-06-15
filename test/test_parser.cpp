@@ -24,7 +24,7 @@ TEST_CASE("GeoTIFF Parser functionality") {
 
         // Create RasterCollection
         geotiv::RasterCollection originalRc;
-        originalRc.crs = concord::CRS::WGS;
+        originalRc.crs = geotiv::CRS::WGS;
         originalRc.datum = datum;
         originalRc.heading = heading;
         originalRc.resolution = cellSize;
@@ -36,7 +36,7 @@ TEST_CASE("GeoTIFF Parser functionality") {
         layer.samplesPerPixel = 1;
         layer.planarConfig = 1;
         // Set per-layer metadata
-        layer.crs = concord::CRS::WGS;
+        layer.crs = geotiv::CRS::WGS;
         layer.datum = datum;
         layer.heading = heading;
         layer.resolution = cellSize;
@@ -69,8 +69,8 @@ TEST_CASE("GeoTIFF Parser functionality") {
         CHECK(readRc.layers[0].height == rows);
         CHECK(readRc.layers[0].samplesPerPixel == 1);
         // Check both collection-level and layer-level metadata
-        CHECK(readRc.crs == concord::CRS::WGS);
-        CHECK(readRc.layers[0].crs == concord::CRS::WGS);
+        CHECK(readRc.crs == geotiv::CRS::WGS);
+        CHECK(readRc.layers[0].crs == geotiv::CRS::WGS);
         CHECK(readRc.datum.lat == doctest::Approx(datum.lat).epsilon(0.001));
         CHECK(readRc.layers[0].datum.lat == doctest::Approx(datum.lat).epsilon(0.001));
         CHECK(readRc.datum.lon == doctest::Approx(datum.lon).epsilon(0.001));
@@ -124,7 +124,7 @@ TEST_CASE("GeoTIFF Parser functionality") {
         concord::Pose shift{concord::Point{0, 0, 0}, heading};
 
         geotiv::RasterCollection originalRc;
-        originalRc.crs = concord::CRS::ENU;
+        originalRc.crs = geotiv::CRS::ENU;
         originalRc.datum = datum;
         originalRc.heading = heading;
         originalRc.resolution = cellSize;
@@ -192,7 +192,7 @@ TEST_CASE("GeoTIFF Parser functionality") {
         }
 
         geotiv::RasterCollection rc;
-        rc.crs = concord::CRS::WGS;
+        rc.crs = geotiv::CRS::WGS;
         rc.datum = datum;
         rc.heading = heading;
         rc.resolution = cellSize;

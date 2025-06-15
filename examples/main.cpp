@@ -21,7 +21,7 @@ int main() {
 
         // --- 2) Build a RasterCollection around it ---
         geotiv::RasterCollection rc;
-        rc.crs = concord::CRS::WGS;
+        rc.crs = geotiv::CRS::WGS;
         rc.datum = datum;
         rc.heading = heading;
         rc.resolution = cellSize;
@@ -33,7 +33,7 @@ int main() {
         L.samplesPerPixel = 1; // single‐band
         L.planarConfig = 1;    // chunky
         // Set per-layer metadata
-        L.crs = concord::CRS::WGS;
+        L.crs = geotiv::CRS::WGS;
         L.datum = datum;
         L.heading = heading;
         L.resolution = cellSize;

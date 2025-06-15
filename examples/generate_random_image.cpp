@@ -40,7 +40,7 @@ int main() {
 
         // Create RasterCollection with proper metadata
         geotiv::RasterCollection rc;
-        rc.crs = concord::CRS::WGS;
+        rc.crs = geotiv::CRS::WGS;
         rc.datum = datum;
         rc.heading = heading;
         rc.resolution = cellSize;
@@ -54,7 +54,7 @@ int main() {
         layer.planarConfig = 1;    // chunky format
 
         // Set per-layer geospatial metadata
-        layer.crs = concord::CRS::WGS;
+        layer.crs = geotiv::CRS::WGS;
         layer.datum = datum;
         layer.heading = heading;
         layer.resolution = cellSize;

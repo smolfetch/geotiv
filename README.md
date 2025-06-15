@@ -65,7 +65,7 @@ layer.width = cols;
 layer.height = rows;
 layer.samplesPerPixel = 1;
 // Set per-layer geospatial metadata
-layer.crs = concord::CRS::WGS;
+layer.crs = geotiv::CRS::WGS;
 layer.datum = datum;
 layer.heading = heading;
 layer.resolution = cellSize;
@@ -100,7 +100,7 @@ Geotiv provides comprehensive support for multi-IFD GeoTIFF files, where each IF
 #### Per-Layer Metadata:
 ```cpp
 geotiv::Layer layer;
-layer.crs = concord::CRS::WGS;           // Coordinate reference system
+layer.crs = geotiv::CRS::WGS;           // Coordinate reference system
 layer.datum = {47.5, 8.5, 200.0};       // Lat, lon, altitude
 layer.heading = {0, 0, 30};              // Roll, pitch, yaw rotation
 layer.resolution = 2.0;                  // Meters per pixel
@@ -115,7 +115,7 @@ geotiv::RasterCollection rc;
 // Create multiple layers with different properties
 for (int i = 0; i < 3; ++i) {
     geotiv::Layer layer;
-    layer.crs = (i == 0) ? concord::CRS::WGS : concord::CRS::ENU;
+    layer.crs = (i == 0) ? geotiv::CRS::WGS : geotiv::CRS::ENU;
     layer.datum = {47.0 + i * 0.1, 8.0 + i * 0.1, 100.0 + i * 50};
     layer.resolution = 1.0 + i * 0.5;
     
@@ -139,9 +139,31 @@ geotiv::WriteRasterCollection(rc, "multi_layer.tif");
 
 ### Coordinate System Support
 
-- **WGS84**: World Geodetic System 1984 (geographic coordinates)
-- **ENU**: East-North-Up local coordinate system
-- **Automatic transformation**: Between pixel coordinates and real-world positions
+Geotiv supports two coordinate system flavors for GeoTIFF files:
+
+#### Coordinate Reference Systems (CRS)
+- **`geotiv::CRS::WGS`**: World Geodetic System 1984 (geographic coordinates)
+  - Data stored in latitude/longitude coordinates
+  - Converted to local ENU space during parsing for grid operations
+- **`geotiv::CRS::ENU`**: East-North-Up local coordinate system
+  - Data already in local space coordinates
+  - No conversion needed during parsing
+
+#### Key Features:
+- **Datum always required**: Provides the reference point for coordinate transformations
+- **Per-layer CRS**: Each IFD can have its own coordinate system
+- **Automatic conversion**: Proper handling of coordinate transformations during I/O
+- **Flexible workflows**: Mix WGS and ENU layers in the same file
+
+```cpp
+// WGS flavor - geographic coordinates
+layer.crs = geotiv::CRS::WGS;
+layer.datum = {47.5, 8.5, 200.0}; // lat, lon, alt reference
+
+// ENU flavor - local coordinates  
+layer.crs = geotiv::CRS::ENU;
+layer.datum = {47.5, 8.5, 200.0}; // still need datum as reference
+```
 
 ## 📊 Supported Features
 
@@ -251,7 +273,7 @@ geotiv::RasterCollection timeSeries;
 
 for (const auto& timestamp : timestamps) {
     geotiv::Layer layer;
-    layer.crs = concord::CRS::WGS;
+    layer.crs = geotiv::CRS::WGS;
     layer.datum = surveyLocation;
     layer.resolution = 0.5; // 50cm resolution
     

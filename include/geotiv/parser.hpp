@@ -81,11 +81,11 @@ namespace geotiv {
             uint32_t count, valueOffset;
         };
 
-        inline concord::CRS parseCRS(const std::string &s) {
+        inline geotiv::CRS parseCRS(const std::string &s) {
             if (s == "ENU")
-                return concord::CRS::ENU;
+                return geotiv::CRS::ENU;
             if (s == "WGS" || s == "WGS84" || s == "EPSG:4326")
-                return concord::CRS::WGS;
+                return geotiv::CRS::WGS;
             throw std::runtime_error("geotiff::Unknown CRS string: " + s);
         }
 
@@ -276,7 +276,7 @@ namespace geotiv {
             }
 
             // Parse geotags for each IFD independently
-            concord::CRS layerCRS = concord::CRS::WGS; // default
+            geotiv::CRS layerCRS = geotiv::CRS::WGS; // default
             concord::Datum layerDatum;                 // Will be set from ImageDescription or use a valid default
             concord::Euler layerHeading{0, 0, 0};      // default
             double layerResolution = 1.0;              // default
@@ -357,9 +357,21 @@ namespace geotiv {
                 throw std::runtime_error("Datum not properly initialized for layer");
             }
 
-            concord::WGS w0{L.datum.lat, L.datum.lon, L.datum.alt};
-            concord::Point p0{w0, L.datum};
-            concord::Pose shift{p0, L.heading};
+            // Handle different CRS flavors
+            concord::Point p0;
+            concord::Pose shift;
+            
+            if (layerCRS == geotiv::CRS::WGS) {
+                // WGS flavor: Convert WGS coordinates to local ENU space
+                concord::WGS w0{L.datum.lat, L.datum.lon, L.datum.alt};
+                concord::ENU enu0 = w0.toENU(L.datum);
+                p0 = concord::Point{enu0.x, enu0.y, enu0.z};
+                shift = concord::Pose{p0, L.heading};
+            } else {
+                // ENU flavor: Data is already in local space, use datum as origin
+                p0 = concord::Point{0.0, 0.0, 0.0}; // Local origin for ENU
+                shift = concord::Pose{p0, L.heading};
+            }
 
             concord::Grid<uint8_t> grid(
                 /*rows=*/L.height,
@@ -405,7 +417,7 @@ namespace geotiv {
     // ------------------------------------------------------------------
     inline std::ostream &operator<<(std::ostream &os, geotiv::RasterCollection const &rc) {
         os << "GeoTIFF RasterCollection\n"
-           << " CRS:        " << (rc.crs == concord::CRS::WGS ? "WGS" : "ENU") << "\n"
+           << " CRS:        " << (rc.crs == geotiv::CRS::WGS ? "WGS" : "ENU") << "\n"
            << " DATUM:      " << rc.datum.lat << ", " << rc.datum.lon << ", " << rc.datum.alt << "\n"
            << " HEADING:    yaw=" << rc.heading.yaw << "\n"
            << " RESOLUTION: " << rc.resolution << " (map units per pixel)\n"

@@ -32,7 +32,7 @@ TEST_CASE("Advanced Multi-IFD with Per-Layer Tags and Metadata") {
             layer.planarConfig = 1;
 
             // Set different coordinate systems per layer
-            layer.crs = (i == 0) ? concord::CRS::WGS : concord::CRS::ENU;
+            layer.crs = (i == 0) ? geotiv::CRS::WGS : geotiv::CRS::ENU;
             layer.datum = datum;
             layer.heading = heading;
             layer.resolution = cellSize;
@@ -74,7 +74,7 @@ TEST_CASE("Advanced Multi-IFD with Per-Layer Tags and Metadata") {
             CHECK(layer.height == (10 + i * 5));
 
             // Check coordinate system
-            concord::CRS expectedCRS = (i == 0) ? concord::CRS::WGS : concord::CRS::ENU;
+            geotiv::CRS expectedCRS = (i == 0) ? geotiv::CRS::WGS : geotiv::CRS::ENU;
             CHECK(layer.crs == expectedCRS);
 
             // Check datum (with some tolerance for floating point precision)
@@ -137,7 +137,7 @@ TEST_CASE("Advanced Multi-IFD with Per-Layer Tags and Metadata") {
             layer.height = static_cast<uint32_t>(rows);
             layer.samplesPerPixel = 1;
             layer.planarConfig = 1;
-            layer.crs = concord::CRS::WGS;
+            layer.crs = geotiv::CRS::WGS;
             layer.datum = surveyLocation;
             layer.heading = {0, 0, 0};
             layer.resolution = cellSize;

@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-#include "concord/concord.hpp" // concord::CRS, Datum, Euler
+#include "concord/concord.hpp" // Datum, Euler
 #include "geotiv/types.hpp"    // RasterCollection
 
 namespace geotiv {
@@ -16,6 +16,11 @@ namespace geotiv {
 
     /// Write out all layers in rc as a chained‐IFD GeoTIFF.
     /// Each IFD can have its own CRS/DATUM/HEADING/PixelScale and custom tags.
+    /// 
+    /// CRS Flavor Handling:
+    /// - ENU flavor: Grid data is already in local space, datum provides reference
+    /// - WGS flavor: Grid data represents WGS coordinates, datum provides reference
+    /// The Grid object contains the appropriate coordinate system based on parsing
     inline std::vector<uint8_t> toTiffBytes(RasterCollection const &rc) {
         size_t N = rc.layers.size();
         if (N == 0)
@@ -68,7 +73,7 @@ namespace geotiv {
                 descriptions[i] = layer.imageDescription; // Use custom description if provided
             } else {
                 // Generate geospatial description
-                descriptions[i] = "CRS " + std::string(layer.crs == concord::CRS::WGS ? "WGS" : "ENU") + " DATUM " +
+                descriptions[i] = "CRS " + std::string(layer.crs == geotiv::CRS::WGS ? "WGS" : "ENU") + " DATUM " +
                                   std::to_string(layer.datum.lat) + " " + std::to_string(layer.datum.lon) + " " +
                                   std::to_string(layer.datum.alt) + " HEADING " + std::to_string(layer.heading.yaw);
             }
@@ -296,7 +301,7 @@ namespace geotiv {
             writeLE16(1024);                                   // GTModelTypeGeoKey
             writeLE16(0);                                      // TIFFTagLocation (0 means value is in ValueOffset)
             writeLE16(1);                                      // Count
-            writeLE16(layer.crs == concord::CRS::WGS ? 2 : 1); // 2=Geographic, 1=Projected
+            writeLE16(layer.crs == geotiv::CRS::WGS ? 2 : 1); // 2=Geographic, 1=Projected
 
             // Write custom tag data for this layer
             writePos = customDataOffsets[i];

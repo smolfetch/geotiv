@@ -11,6 +11,12 @@ namespace geotiv {
 
     using std::uint16_t;
 
+    // CRS enum to replace the old concord::CRS enum
+    enum class CRS {
+        WGS,  // WGS84 coordinate system
+        ENU   // East-North-Up coordinate system
+    };
+
     struct Layer {
         // **New**: where in the file this IFD lived
         uint32_t ifdOffset = 0;
@@ -26,7 +32,7 @@ namespace geotiv {
         std::vector<uint32_t> stripByteCounts;
 
         // Per-IFD geospatial metadata (allows different coordinate systems per layer)
-        concord::CRS crs = concord::CRS::WGS;
+        CRS crs = CRS::WGS;
         concord::Datum datum;    // lat=lon=alt=0
         concord::Euler heading;  // roll=pitch=0, yaw=0
         double resolution = 1.0; // the representation of one pixel in meters
@@ -42,7 +48,7 @@ namespace geotiv {
     struct RasterCollection {
         std::vector<Layer> layers; // one entry per IFD
 
-        concord::CRS crs = concord::CRS::ENU;
+        CRS crs = CRS::ENU;
         concord::Datum datum;   // lat=lon=alt=0
         concord::Euler heading; // roll=pitch=0, yaw=0
         double resolution;      // the representation of one pixel in meters
