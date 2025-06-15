@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.0] - 2025-06-15
+
+### <!-- 0 -->⛰️  Features
+
+- Refactor codebase to use internal CRS type
+
+### <!-- 3 -->📚 Documentation
+
+- Clean up blank lines in documentation
+
 ## [0.3.0] - 2025-06-11
 
 ### <!-- 0 -->⛰️  Features
