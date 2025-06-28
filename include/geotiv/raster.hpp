@@ -30,12 +30,10 @@ private:
     double resolution_;
 
 public:
-    Raster() = delete;
-    
-    explicit Raster(const concord::Datum& datum = concord::Datum{0.001, 0.001, 1.0},
-                   const concord::Euler& heading = concord::Euler{0, 0, 0},
-                   CRS crs = CRS::ENU,
-                   double resolution = 1.0)
+    Raster(const concord::Datum& datum = concord::Datum{0.001, 0.001, 1.0},
+           const concord::Euler& heading = concord::Euler{0, 0, 0},
+           CRS crs = CRS::ENU,
+           double resolution = 1.0)
         : datum_(datum), heading_(heading), crs_(crs), resolution_(resolution) {}
 
     static Raster fromFile(const std::filesystem::path& path) {
@@ -201,6 +199,14 @@ public:
             }
         }
         return result;
+    }
+
+    std::vector<std::string> getGridNames() const {
+        std::vector<std::string> names;
+        for (const auto& layer : grid_layers_) {
+            names.push_back(layer.name);
+        }
+        return names;
     }
 
     const concord::Datum& getDatum() const { return datum_; }
