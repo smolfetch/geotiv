@@ -377,7 +377,6 @@ namespace geotiv {
                 /*rows=*/L.height,
                 /*cols=*/L.width,
                 /*diameter=*/L.resolution,
-                /*datum=*/L.datum,
                 /*centered=*/true,
                 /*shift=*/shift);
 

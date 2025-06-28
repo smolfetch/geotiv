@@ -13,7 +13,7 @@ TEST_CASE("GeoTIFF Writer functionality") {
         concord::Euler heading{0, 0, 0};
         concord::Pose shift{concord::Point{0, 0, 0}, heading};
 
-        concord::Grid<uint8_t> grid(rows, cols, cellSize, datum, true, shift);
+        concord::Grid<uint8_t> grid(rows, cols, cellSize, true, shift);
 
         // Fill with simple pattern
         grid(0, 0).second = 255;
@@ -65,7 +65,7 @@ TEST_CASE("GeoTIFF Writer functionality") {
         concord::Euler heading{0, 0, 0};
         concord::Pose shift{concord::Point{0, 0, 0}, heading};
 
-        concord::Grid<uint8_t> grid(rows, cols, cellSize, datum, true, shift);
+        concord::Grid<uint8_t> grid(rows, cols, cellSize, true, shift);
 
         // Fill with gradient
         for (size_t r = 0; r < rows; ++r) {
@@ -121,7 +121,7 @@ TEST_CASE("GeoTIFF Writer functionality") {
 
         // Create two layers with different patterns
         for (int layerIdx = 0; layerIdx < 2; ++layerIdx) {
-            concord::Grid<uint8_t> grid(rows, cols, cellSize, datum, true, shift);
+            concord::Grid<uint8_t> grid(rows, cols, cellSize, true, shift);
 
             for (size_t r = 0; r < rows; ++r) {
                 for (size_t c = 0; c < cols; ++c) {

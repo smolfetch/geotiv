@@ -13,7 +13,7 @@ int main() {
         concord::Datum datum{48.0, 11.0, 500.0};               // lat, lon, alt
         concord::Euler heading{0, 0, 0};                       // no rotation
         concord::Pose shift{concord::Point{0, 0, 0}, heading}; // center grid at datum
-        concord::Grid<uint8_t> grid(rows, cols, cellSize, datum,
+        concord::Grid<uint8_t> grid(rows, cols, cellSize, 
                                     /*centered=*/true, shift);
         for (size_t r = 0; r < rows; ++r)
             for (size_t c = 0; c < cols; ++c)

@@ -154,7 +154,7 @@ public:
             shift = concord::Pose{p0, heading_};
         }
 
-        concord::Grid<uint8_t> grid(height, width, resolution_, datum_, true, shift);
+        concord::Grid<uint8_t> grid(height, width, resolution_, true, shift);
         auto props = properties;
         if (!type.empty()) {
             props["type"] = type;

@@ -21,7 +21,7 @@ int main() {
         concord::Pose shift{concord::Point{0, 0, 0}, heading};
 
         // Create the grid
-        concord::Grid<uint8_t> grid(rows, cols, cellSize, datum, true, shift);
+        concord::Grid<uint8_t> grid(rows, cols, cellSize, true, shift);
 
         std::cout << "Creating test pattern...\n";
 

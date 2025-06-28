@@ -15,7 +15,7 @@ TEST_CASE("Advanced Multi-IFD with Per-Layer Tags and Metadata") {
             concord::Euler heading{0, 0, i * 15.0}; // Different rotation per layer
             concord::Pose shift{concord::Point{0, 0, 0}, heading};
 
-            concord::Grid<uint8_t> grid(rows, cols, cellSize, datum, true, shift);
+            concord::Grid<uint8_t> grid(rows, cols, cellSize, true, shift);
 
             // Fill with layer-specific pattern
             for (size_t r = 0; r < rows; ++r) {
@@ -122,7 +122,7 @@ TEST_CASE("Advanced Multi-IFD with Per-Layer Tags and Metadata") {
             concord::Datum surveyLocation{46.5204, 6.6234, 372.0}; // Geneva coordinates
             concord::Pose shift{concord::Point{0, 0, 0}, concord::Euler{0, 0, 0}};
 
-            concord::Grid<uint8_t> grid(rows, cols, cellSize, surveyLocation, true, shift);
+            concord::Grid<uint8_t> grid(rows, cols, cellSize, true, shift);
 
             // Fill with time-dependent pattern
             for (size_t r = 0; r < rows; ++r) {

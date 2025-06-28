@@ -13,7 +13,7 @@ TEST_CASE("GeoTIFF Parser functionality") {
         concord::Euler heading{0, 0, 30};
         concord::Pose shift{concord::Point{0, 0, 0}, heading};
 
-        concord::Grid<uint8_t> grid(rows, cols, cellSize, datum, true, shift);
+        concord::Grid<uint8_t> grid(rows, cols, cellSize, true, shift);
 
         // Fill with a known pattern
         for (size_t r = 0; r < rows; ++r) {
@@ -131,7 +131,7 @@ TEST_CASE("GeoTIFF Parser functionality") {
 
         // Create 3 layers
         for (int layerIdx = 0; layerIdx < 3; ++layerIdx) {
-            concord::Grid<uint8_t> grid(rows, cols, cellSize, datum, true, shift);
+            concord::Grid<uint8_t> grid(rows, cols, cellSize, true, shift);
 
             for (size_t r = 0; r < rows; ++r) {
                 for (size_t c = 0; c < cols; ++c) {
@@ -182,7 +182,7 @@ TEST_CASE("GeoTIFF Parser functionality") {
         concord::Euler heading{0, 0, 0};
         concord::Pose shift{concord::Point{0, 0, 0}, heading};
 
-        concord::Grid<uint8_t> grid(rows, cols, cellSize, datum, true, shift);
+        concord::Grid<uint8_t> grid(rows, cols, cellSize, true, shift);
 
         // Fill with known values
         for (size_t r = 0; r < rows; ++r) {

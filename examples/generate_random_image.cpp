@@ -22,7 +22,7 @@ int main() {
         concord::Pose shift{concord::Point{0, 0, 0}, heading};
 
         // Create the grid
-        concord::Grid<uint8_t> grid(rows, cols, cellSize, datum, true, shift);
+        concord::Grid<uint8_t> grid(rows, cols, cellSize, true, shift);
 
         // Initialize random number generator
         auto seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
