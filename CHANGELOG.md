@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.1.1] - 2025-06-28
+
+### <!-- 7 -->⚙️ Miscellaneous Tasks
+
+- Update concord to version 2.0.4 and remove datum parameter
+
 ## [1.1.0] - 2025-06-28
 
 ### <!-- 0 -->⛰️  Features
