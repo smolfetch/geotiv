@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.1.3] - 2025-06-29
+
+### <!-- 0 -->⛰️  Features
+
+- Pass custom tags to raster layers
+
 ## [1.1.2] - 2025-06-29
 
 ### <!-- 0 -->⛰️  Features
