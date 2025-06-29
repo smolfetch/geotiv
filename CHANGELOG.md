@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.1.2] - 2025-06-29
+
+### <!-- 0 -->⛰️  Features
+
+- Integrate global properties with TIFF ASCII tags
+
 ## [1.1.1] - 2025-06-28
 
 ### <!-- 7 -->⚙️ Miscellaneous Tasks
