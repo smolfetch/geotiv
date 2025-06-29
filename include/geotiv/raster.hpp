@@ -94,7 +94,12 @@ public:
             props["resolution"] = std::to_string(layer.resolution);
             props["samples_per_pixel"] = std::to_string(layer.samplesPerPixel);
             
-            raster.grid_layers_.emplace_back(layer.grid, layerName, layerType, props);
+            GridLayer gridLayer(layer.grid, layerName, layerType, props);
+            
+            // Transfer custom tags (including global properties)
+            gridLayer.customTags = layer.customTags;
+            
+            raster.grid_layers_.push_back(std::move(gridLayer));
         }
         
         return raster;
@@ -122,6 +127,9 @@ public:
             
             std::string description = "NAME " + gridLayer.name + " TYPE " + gridLayer.type;
             layer.imageDescription = description;
+            
+            // Transfer custom tags (including global properties)
+            layer.customTags = gridLayer.customTags;
             
             rc.layers.push_back(std::move(layer));
         }
