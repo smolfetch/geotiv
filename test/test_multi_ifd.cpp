@@ -20,7 +20,7 @@ TEST_CASE("Advanced Multi-IFD with Per-Layer Tags and Metadata") {
             // Fill with layer-specific pattern
             for (size_t r = 0; r < rows; ++r) {
                 for (size_t c = 0; c < cols; ++c) {
-                    grid(r, c).second = static_cast<uint8_t>((i * 50 + r + c) % 256);
+                    grid(r, c) = static_cast<uint8_t>((i * 50 + r + c) % 256);
                 }
             }
 
@@ -103,7 +103,7 @@ TEST_CASE("Advanced Multi-IFD with Per-Layer Tags and Metadata") {
 
             // Check some pixel values
             uint8_t expectedFirst = static_cast<uint8_t>((i * 50) % 256);
-            CHECK(grid(0, 0).second == expectedFirst);
+            CHECK(grid(0, 0) == expectedFirst);
         }
 
         // Clean up
@@ -127,7 +127,7 @@ TEST_CASE("Advanced Multi-IFD with Per-Layer Tags and Metadata") {
             // Fill with time-dependent pattern
             for (size_t r = 0; r < rows; ++r) {
                 for (size_t c = 0; c < cols; ++c) {
-                    grid(r, c).second = static_cast<uint8_t>((t * 40 + r + c) % 256);
+                    grid(r, c) = static_cast<uint8_t>((t * 40 + r + c) % 256);
                 }
             }
 

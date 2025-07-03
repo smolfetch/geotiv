@@ -16,12 +16,12 @@ TEST_CASE("GeoTIFF Writer functionality") {
         concord::Grid<uint8_t> grid(rows, cols, cellSize, true, shift);
 
         // Fill with simple pattern
-        grid(0, 0).second = 255;
-        grid(0, 1).second = 0;
-        grid(0, 2).second = 255;
-        grid(1, 0).second = 0;
-        grid(1, 1).second = 255;
-        grid(1, 2).second = 0;
+        grid(0, 0) = 255;
+        grid(0, 1) = 0;
+        grid(0, 2) = 255;
+        grid(1, 0) = 0;
+        grid(1, 1) = 255;
+        grid(1, 2) = 0;
 
         // Build RasterCollection
         geotiv::RasterCollection rc;
@@ -70,7 +70,7 @@ TEST_CASE("GeoTIFF Writer functionality") {
         // Fill with gradient
         for (size_t r = 0; r < rows; ++r) {
             for (size_t c = 0; c < cols; ++c) {
-                grid(r, c).second = static_cast<uint8_t>((r * cols + c) * 10);
+                grid(r, c) = static_cast<uint8_t>((r * cols + c) * 10);
             }
         }
 
@@ -125,7 +125,7 @@ TEST_CASE("GeoTIFF Writer functionality") {
 
             for (size_t r = 0; r < rows; ++r) {
                 for (size_t c = 0; c < cols; ++c) {
-                    grid(r, c).second = static_cast<uint8_t>((layerIdx + 1) * 50 + r * 10 + c);
+                    grid(r, c) = static_cast<uint8_t>((layerIdx + 1) * 50 + r * 10 + c);
                 }
             }
 

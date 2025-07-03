@@ -42,7 +42,7 @@ namespace geotiv {
             size_t idx = 0;
             for (uint32_t r = 0; r < H; ++r) {
                 for (uint32_t c = 0; c < W; ++c) {
-                    uint8_t v = g(r, c).second;
+                    uint8_t v = g(r, c);
                     for (uint32_t s = 0; s < S; ++s) {
                         strips[i][idx++] = v;
                     }

@@ -17,7 +17,7 @@ int main() {
                                     /*centered=*/true, shift);
         for (size_t r = 0; r < rows; ++r)
             for (size_t c = 0; c < cols; ++c)
-                grid(r, c).second = ((r / 5 + c / 5) % 2) ? 255 : 0;
+                grid(r, c) = ((r / 5 + c / 5) % 2) ? 255 : 0;
 
         // --- 2) Build a RasterCollection around it ---
         geotiv::RasterCollection rc;

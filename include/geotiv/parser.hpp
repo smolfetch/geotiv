@@ -386,7 +386,7 @@ namespace geotiv {
                 for (uint32_t r = 0; r < L.height; ++r) {
                     for (uint32_t c = 0; c < L.width; ++c) {
                         // For multi-sample pixels, take first sample
-                        grid(r, c).second = pix[idx];
+                        grid(r, c) = pix[idx];
                         idx += L.samplesPerPixel;
                     }
                 }
@@ -395,7 +395,7 @@ namespace geotiv {
                 size_t idx = 0;
                 for (uint32_t r = 0; r < L.height; ++r) {
                     for (uint32_t c = 0; c < L.width; ++c) {
-                        grid(r, c).second = pix[idx++];
+                        grid(r, c) = pix[idx++];
                     }
                 }
             }

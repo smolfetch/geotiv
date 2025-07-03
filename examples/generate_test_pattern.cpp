@@ -48,7 +48,7 @@ int main() {
                     value = static_cast<uint8_t>(128 + 127 * std::sin(dist / 10.0));
                 }
 
-                grid(r, c).second = value;
+                grid(r, c) = value;
             }
         }
 

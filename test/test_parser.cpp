@@ -18,7 +18,7 @@ TEST_CASE("GeoTIFF Parser functionality") {
         // Fill with a known pattern
         for (size_t r = 0; r < rows; ++r) {
             for (size_t c = 0; c < cols; ++c) {
-                grid(r, c).second = static_cast<uint8_t>((r + c) % 256);
+                grid(r, c) = static_cast<uint8_t>((r + c) % 256);
             }
         }
 
@@ -86,9 +86,9 @@ TEST_CASE("GeoTIFF Parser functionality") {
         CHECK(readGrid.cols() == cols);
 
         // Verify some pixel values (note: might have precision differences)
-        CHECK(readGrid(0, 0).second == 0); // (0+0) % 256 = 0
-        CHECK(readGrid(1, 1).second == 2); // (1+1) % 256 = 2
-        CHECK(readGrid(2, 3).second == 5); // (2+3) % 256 = 5
+        CHECK(readGrid(0, 0) == 0); // (0+0) % 256 = 0
+        CHECK(readGrid(1, 1) == 2); // (1+1) % 256 = 2
+        CHECK(readGrid(2, 3) == 5); // (2+3) % 256 = 5
 
         // Clean up
         std::filesystem::remove(testFile);
@@ -135,7 +135,7 @@ TEST_CASE("GeoTIFF Parser functionality") {
 
             for (size_t r = 0; r < rows; ++r) {
                 for (size_t c = 0; c < cols; ++c) {
-                    grid(r, c).second = static_cast<uint8_t>(layerIdx * 100 + r * 10 + c);
+                    grid(r, c) = static_cast<uint8_t>(layerIdx * 100 + r * 10 + c);
                 }
             }
 
@@ -166,9 +166,9 @@ TEST_CASE("GeoTIFF Parser functionality") {
         }
 
         // Verify some pixel values from different layers
-        CHECK(readRc.layers[0].grid(0, 0).second == 0);   // 0*100 + 0*10 + 0 = 0
-        CHECK(readRc.layers[1].grid(0, 1).second == 101); // 1*100 + 0*10 + 1 = 101
-        CHECK(readRc.layers[2].grid(1, 2).second == 212); // 2*100 + 1*10 + 2 = 212
+        CHECK(readRc.layers[0].grid(0, 0) == 0);   // 0*100 + 0*10 + 0 = 0
+        CHECK(readRc.layers[1].grid(0, 1) == 101); // 1*100 + 0*10 + 1 = 101
+        CHECK(readRc.layers[2].grid(1, 2) == 212); // 2*100 + 1*10 + 2 = 212
 
         // Clean up
         std::filesystem::remove(testFile);
@@ -187,7 +187,7 @@ TEST_CASE("GeoTIFF Parser functionality") {
         // Fill with known values
         for (size_t r = 0; r < rows; ++r) {
             for (size_t c = 0; c < cols; ++c) {
-                grid(r, c).second = static_cast<uint8_t>(r * 10 + c);
+                grid(r, c) = static_cast<uint8_t>(r * 10 + c);
             }
         }
 

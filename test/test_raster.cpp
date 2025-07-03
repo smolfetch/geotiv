@@ -123,21 +123,21 @@ TEST_CASE("Raster - Grid Data Operations") {
         // Set some test data
         for (uint32_t r = 0; r < 10; ++r) {
             for (uint32_t c = 0; c < 10; ++c) {
-                grid.grid(r, c).second = static_cast<uint8_t>(r * 10 + c);
+                grid.grid(r, c) = static_cast<uint8_t>(r * 10 + c);
             }
         }
         
         // Verify data
-        CHECK(grid.grid(0, 0).second == 0);
-        CHECK(grid.grid(5, 7).second == 57);
-        CHECK(grid.grid(9, 9).second == 99);
+        CHECK(grid.grid(0, 0) == 0);
+        CHECK(grid.grid(5, 7) == 57);
+        CHECK(grid.grid(9, 9) == 99);
     }
     
     SUBCASE("World coordinate mapping") {
         const auto& grid = raster.getGrid("test_data");
         
         // Get world coordinate for a grid cell
-        auto worldCoord = grid.grid(5, 5).first;
+        auto worldCoord = grid.grid.get_point(5, 5);
         
         // World coordinates should be valid concord::Point
         bool hasValidCoords = (worldCoord.x != 0.0 || worldCoord.y != 0.0 || worldCoord.z == 0.0);
@@ -186,14 +186,14 @@ TEST_CASE("Raster - File I/O") {
     auto& terrainGrid = originalRaster.getGrid("terrain");
     for (uint32_t r = 0; r < 20; ++r) {
         for (uint32_t c = 0; c < 20; ++c) {
-            terrainGrid.grid(r, c).second = static_cast<uint8_t>((r + c) % 256);
+            terrainGrid.grid(r, c) = static_cast<uint8_t>((r + c) % 256);
         }
     }
     
     auto& occlusionGrid = originalRaster.getGrid("occlusion");
     for (uint32_t r = 0; r < 20; ++r) {
         for (uint32_t c = 0; c < 20; ++c) {
-            occlusionGrid.grid(r, c).second = static_cast<uint8_t>((r * c) % 256);
+            occlusionGrid.grid(r, c) = static_cast<uint8_t>((r * c) % 256);
         }
     }
     

@@ -34,7 +34,7 @@ int main() {
         // Fill with random values
         for (size_t r = 0; r < rows; ++r) {
             for (size_t c = 0; c < cols; ++c) {
-                grid(r, c).second = static_cast<uint8_t>(dis(gen));
+                grid(r, c) = static_cast<uint8_t>(dis(gen));
             }
         }
 

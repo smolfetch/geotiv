@@ -22,13 +22,9 @@ include(FetchContent)
 
 # --------------------------------------------------------------------------------------------------
 set(ext_deps)
-FetchContent_Declare(concord GIT_REPOSITORY https://github.com/smolfetch/concord.git GIT_TAG 2.0.4)
+FetchContent_Declare(concord GIT_REPOSITORY https://github.com/smolfetch/concord.git GIT_TAG 2.2.0)
 FetchContent_MakeAvailable(concord)
 list(APPEND ext_deps concord::concord)
-
-FetchContent_Declare(pigment GIT_REPOSITORY https://github.com/smolfetch/pigment.git GIT_TAG 0.3.0)
-FetchContent_MakeAvailable(pigment)
-list(APPEND ext_deps pigment::pigment)
 
 # --------------------------------------------------------------------------------------------------
 add_library(${project_name} INTERFACE)
