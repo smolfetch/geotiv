@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.1.4] - 2025-07-03
+
+### <!-- 2 -->🚜 Refactor
+
+- Refactor: Update dependencies and simplify data access
+
 ## [1.1.3] - 2025-06-29
 
 ### <!-- 0 -->⛰️  Features
