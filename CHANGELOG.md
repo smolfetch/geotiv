@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.0.0] - 2025-07-09
+
+### <!-- 0 -->⛰️  Features
+
+- Improve GeoTIFF CRS handling and WGS84 compatibility
+
 ## [1.2.0] - 2025-07-09
 
 ### <!-- 7 -->⚙️ Miscellaneous Tasks

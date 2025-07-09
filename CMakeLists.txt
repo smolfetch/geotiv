@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.15)
 
 set(project_name geotiv)
 
-project(${project_name} VERSION 1.2.0 LANGUAGES CXX)
+project(${project_name} VERSION 2.0.0 LANGUAGES CXX)
 
 add_compile_options(-Wall -Wextra -Wpedantic)
 cmake_policy(SET CMP0074 NEW)
