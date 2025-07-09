@@ -54,7 +54,7 @@ namespace geotiv {
 
       public:
         Raster(const concord::Datum &datum = concord::Datum{0.001, 0.001, 1.0},
-               const concord::Pose &shift = concord::Pose{concord::Point{0, 0, 0}, concord::Euler{0, 0, 0}}, 
+               const concord::Pose &shift = concord::Pose{concord::Point{0, 0, 0}, concord::Euler{0, 0, 0}},
                double resolution = 1.0)
             : datum_(datum), shift_(shift), resolution_(resolution) {}
 
