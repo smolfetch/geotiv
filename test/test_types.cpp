@@ -32,7 +32,7 @@ TEST_CASE("RasterCollection structure tests") {
     SUBCASE("Default RasterCollection construction") {
         geotiv::RasterCollection rc;
         CHECK(rc.layers.empty());
-        CHECK(rc.crs == geotiv::CRS::ENU);
+        // CRS is always WGS84 by default
         CHECK(rc.datum.lat == 0.0);
         CHECK(rc.datum.lon == 0.0);
         CHECK(rc.datum.alt == 0.0);
@@ -43,12 +43,12 @@ TEST_CASE("RasterCollection structure tests") {
 
     SUBCASE("RasterCollection with custom values") {
         geotiv::RasterCollection rc;
-        rc.crs = geotiv::CRS::WGS;
+        // CRS is always WGS84
         rc.datum = concord::Datum{48.0, 11.0, 500.0};
         rc.heading = concord::Euler{0, 0, 45};
         rc.resolution = 2.0;
 
-        CHECK(rc.crs == geotiv::CRS::WGS);
+        // CRS is always WGS84
         CHECK(rc.datum.lat == 48.0);
         CHECK(rc.datum.lon == 11.0);
         CHECK(rc.datum.alt == 500.0);

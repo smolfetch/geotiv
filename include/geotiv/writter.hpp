@@ -72,8 +72,8 @@ namespace geotiv {
             if (!layer.imageDescription.empty()) {
                 descriptions[i] = layer.imageDescription; // Use custom description if provided
             } else {
-                // Generate geospatial description
-                descriptions[i] = "CRS " + std::string(layer.crs == geotiv::CRS::WGS ? "WGS" : "ENU") + " DATUM " +
+                // Generate geospatial description (always WGS84)
+                descriptions[i] = "CRS WGS84 DATUM " +
                                   std::to_string(layer.datum.lat) + " " + std::to_string(layer.datum.lon) + " " +
                                   std::to_string(layer.datum.alt) + " HEADING " + std::to_string(layer.heading.yaw);
             }
@@ -120,7 +120,7 @@ namespace geotiv {
             p += 24; // 3 doubles = 24 bytes
 
             geoKeyOffsets[i] = p;
-            p += 32; // GeoKeyDirectory = 32 bytes
+            p += 56; // GeoKeyDirectory = 56 bytes (4 keys for WGS84)
 
             // Custom tag data offset
             customDataOffsets[i] = p;
@@ -253,7 +253,7 @@ namespace geotiv {
             // Tag 34735: GeoKeyDirectoryTag
             writeLE16(34735);
             writeLE16(3);
-            writeLE32(8);
+            writeLE32(14);
             writeLE32(geoKeyOffsets[i]);
 
             // Write custom tags for this layer
@@ -290,18 +290,36 @@ namespace geotiv {
             writeDouble(layer.resolution); // Y scale
             writeDouble(0.0);              // Z scale
 
-            // GeoKeyDirectory for this layer
+            // GeoKeyDirectory for this layer (always WGS84)
             writePos = geoKeyOffsets[i];
             writeLE16(1); // KeyDirectoryVersion
             writeLE16(1); // KeyRevision
             writeLE16(0); // MinorRevision
-            writeLE16(1); // NumberOfKeys
+            writeLE16(4); // NumberOfKeys
 
-            // One key entry: GTModelTypeGeoKey
+            // Key entry 1: GTModelTypeGeoKey
             writeLE16(1024);                                   // GTModelTypeGeoKey
             writeLE16(0);                                      // TIFFTagLocation (0 means value is in ValueOffset)
             writeLE16(1);                                      // Count
-            writeLE16(layer.crs == geotiv::CRS::WGS ? 2 : 1); // 2=Geographic, 1=Projected
+            writeLE16(2);                                      // 2=Geographic (WGS84)
+
+            // Key entry 2: GTRasterTypeGeoKey
+            writeLE16(1025);                                   // GTRasterTypeGeoKey
+            writeLE16(0);                                      // TIFFTagLocation
+            writeLE16(1);                                      // Count
+            writeLE16(1);                                      // RasterPixelIsArea
+
+            // Key entry 3: GeographicTypeGeoKey - EPSG:4326 for WGS84
+            writeLE16(2048);                                   // GeographicTypeGeoKey
+            writeLE16(0);                                      // TIFFTagLocation
+            writeLE16(1);                                      // Count
+            writeLE16(4326);                                   // EPSG:4326 (WGS84)
+
+            // Key entry 4: GeogAngularUnitsGeoKey - degrees for WGS84
+            writeLE16(2054);                                   // GeogAngularUnitsGeoKey
+            writeLE16(0);                                      // TIFFTagLocation
+            writeLE16(1);                                      // Count
+            writeLE16(9102);                                   // 9102=degree
 
             // Write custom tag data for this layer
             writePos = customDataOffsets[i];

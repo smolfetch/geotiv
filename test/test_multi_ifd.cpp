@@ -32,7 +32,7 @@ TEST_CASE("Advanced Multi-IFD with Per-Layer Tags and Metadata") {
             layer.planarConfig = 1;
 
             // Set different coordinate systems per layer
-            layer.crs = (i == 0) ? geotiv::CRS::WGS : geotiv::CRS::ENU;
+            // CRS is always WGS84
             layer.datum = datum;
             layer.heading = heading;
             layer.resolution = cellSize;
@@ -48,7 +48,7 @@ TEST_CASE("Advanced Multi-IFD with Per-Layer Tags and Metadata") {
         }
 
         // Set collection defaults from first layer
-        rc.crs = rc.layers[0].crs;
+        // CRS is always WGS84
         rc.datum = rc.layers[0].datum;
         rc.heading = rc.layers[0].heading;
         rc.resolution = rc.layers[0].resolution;
@@ -74,8 +74,8 @@ TEST_CASE("Advanced Multi-IFD with Per-Layer Tags and Metadata") {
             CHECK(layer.height == (10 + i * 5));
 
             // Check coordinate system
-            geotiv::CRS expectedCRS = (i == 0) ? geotiv::CRS::WGS : geotiv::CRS::ENU;
-            CHECK(layer.crs == expectedCRS);
+            // CRS is always WGS84
+            // CRS is always WGS84
 
             // Check datum (with some tolerance for floating point precision)
             CHECK(layer.datum.lat == doctest::Approx(47.0 + i * 0.1).epsilon(0.001));
@@ -137,7 +137,7 @@ TEST_CASE("Advanced Multi-IFD with Per-Layer Tags and Metadata") {
             layer.height = static_cast<uint32_t>(rows);
             layer.samplesPerPixel = 1;
             layer.planarConfig = 1;
-            layer.crs = geotiv::CRS::WGS;
+            // CRS is always WGS84
             layer.datum = surveyLocation;
             layer.heading = {0, 0, 0};
             layer.resolution = cellSize;
@@ -152,7 +152,7 @@ TEST_CASE("Advanced Multi-IFD with Per-Layer Tags and Metadata") {
         }
 
         // Set collection metadata from first layer
-        timeSeries.crs = timeSeries.layers[0].crs;
+        // CRS is always WGS84
         timeSeries.datum = timeSeries.layers[0].datum;
         timeSeries.heading = timeSeries.layers[0].heading;
         timeSeries.resolution = timeSeries.layers[0].resolution;

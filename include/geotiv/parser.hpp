@@ -81,13 +81,7 @@ namespace geotiv {
             uint32_t count, valueOffset;
         };
 
-        inline geotiv::CRS parseCRS(const std::string &s) {
-            if (s == "ENU")
-                return geotiv::CRS::ENU;
-            if (s == "WGS" || s == "WGS84" || s == "EPSG:4326")
-                return geotiv::CRS::WGS;
-            throw std::runtime_error("geotiff::Unknown CRS string: " + s);
-        }
+        // All CRS are now WGS84 - no parsing needed
 
         inline std::string readString(std::ifstream &f, uint32_t offset, uint32_t count) {
             if (count == 0)
@@ -275,8 +269,7 @@ namespace geotiv {
                 pixOffset += L.stripByteCounts[i];
             }
 
-            // Parse geotags for each IFD independently
-            geotiv::CRS layerCRS = geotiv::CRS::WGS; // default
+            // Parse geotags for each IFD independently (always WGS84)
             concord::Datum layerDatum;                 // Will be set from ImageDescription or use a valid default
             concord::Euler layerHeading{0, 0, 0};      // default
             double layerResolution = 1.0;              // default
@@ -294,11 +287,7 @@ namespace geotiv {
                     if (tok == "CRS") {
                         std::string s;
                         if (ss >> s) {
-                            try {
-                                layerCRS = detail::parseCRS(s);
-                            } catch (...) {
-                                // ignore parse errors for CRS
-                            }
+                            // All CRS are WGS84 - ignore the parsed value
                         }
                     } else if (tok == "DATUM") {
                         if (ss >> layerDatum.lat >> layerDatum.lon >> layerDatum.alt) {
@@ -329,8 +318,7 @@ namespace geotiv {
                 throw std::runtime_error("Invalid pixel scale: " + std::to_string(layerResolution));
             }
 
-            // Set layer-specific metadata
-            L.crs = layerCRS;
+            // Set layer-specific metadata (always WGS84)
             L.datum = layerDatum;
             L.heading = layerHeading;
             L.resolution = layerResolution;
@@ -346,7 +334,6 @@ namespace geotiv {
             // Set collection defaults from first IFD if not set
             if (firstIFD) {
                 firstIFD = false;
-                rc.crs = layerCRS;
                 rc.datum = layerDatum;
                 rc.heading = layerHeading;
                 rc.resolution = layerResolution;
@@ -357,21 +344,11 @@ namespace geotiv {
                 throw std::runtime_error("Datum not properly initialized for layer");
             }
 
-            // Handle different CRS flavors
-            concord::Point p0;
-            concord::Pose shift;
-            
-            if (layerCRS == geotiv::CRS::WGS) {
-                // WGS flavor: Convert WGS coordinates to local ENU space
-                concord::WGS w0{L.datum.lat, L.datum.lon, L.datum.alt};
-                concord::ENU enu0 = w0.toENU(L.datum);
-                p0 = concord::Point{enu0.x, enu0.y, enu0.z};
-                shift = concord::Pose{p0, L.heading};
-            } else {
-                // ENU flavor: Data is already in local space, use datum as origin
-                p0 = concord::Point{0.0, 0.0, 0.0}; // Local origin for ENU
-                shift = concord::Pose{p0, L.heading};
-            }
+            // Always WGS84: Convert WGS coordinates to local ENU space
+            concord::WGS w0{L.datum.lat, L.datum.lon, L.datum.alt};
+            concord::ENU enu0 = w0.toENU(L.datum);
+            concord::Point p0{enu0.x, enu0.y, enu0.z};
+            concord::Pose shift{p0, L.heading};
 
             concord::Grid<uint8_t> grid(
                 /*rows=*/L.height,
@@ -416,7 +393,7 @@ namespace geotiv {
     // ------------------------------------------------------------------
     inline std::ostream &operator<<(std::ostream &os, geotiv::RasterCollection const &rc) {
         os << "GeoTIFF RasterCollection\n"
-           << " CRS:        " << (rc.crs == geotiv::CRS::WGS ? "WGS" : "ENU") << "\n"
+           << " CRS:        WGS84\n"
            << " DATUM:      " << rc.datum.lat << ", " << rc.datum.lon << ", " << rc.datum.alt << "\n"
            << " HEADING:    yaw=" << rc.heading.yaw << "\n"
            << " RESOLUTION: " << rc.resolution << " (map units per pixel)\n"

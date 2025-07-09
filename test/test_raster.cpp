@@ -15,24 +15,24 @@ TEST_CASE("Raster - Basic Construction") {
         
         CHECK(raster.gridCount() == 0);
         CHECK_FALSE(raster.hasGrids());
-        CHECK(raster.getCRS() == geotiv::CRS::ENU);
+        // CRS is always WGS84
         CHECK(raster.getResolution() == doctest::Approx(1.0));
     }
     
     SUBCASE("Constructor with all parameters") {
-        geotiv::Raster raster(datum, heading, geotiv::CRS::WGS, resolution);
+        geotiv::Raster raster(datum, heading, resolution);
         
         CHECK(raster.getDatum().lat == doctest::Approx(52.0));
         CHECK(raster.getDatum().lon == doctest::Approx(5.0));
         CHECK(raster.getHeading().yaw == doctest::Approx(0.5));
-        CHECK(raster.getCRS() == geotiv::CRS::WGS);
+        // CRS is always WGS84
         CHECK(raster.getResolution() == doctest::Approx(2.0));
     }
 }
 
 TEST_CASE("Raster - Grid Management") {
     concord::Datum datum{52.0, 5.0, 0.0};
-    geotiv::Raster raster(datum, concord::Euler{0, 0, 0}, geotiv::CRS::ENU, 1.0);
+    geotiv::Raster raster(datum, concord::Euler{0, 0, 0}, 1.0);
     
     SUBCASE("Add and retrieve grids") {
         raster.addGrid(100, 100, "elevation", "terrain", {{"unit", "meters"}});
@@ -149,10 +149,10 @@ TEST_CASE("Raster - Properties and Metadata") {
     geotiv::Raster raster;
     
     SUBCASE("CRS and coordinate system") {
-        CHECK(raster.getCRS() == geotiv::CRS::ENU);
+        // CRS is always WGS84
         
-        raster.setCRS(geotiv::CRS::WGS);
-        CHECK(raster.getCRS() == geotiv::CRS::WGS);
+        // CRS is always WGS84
+        // CRS is always WGS84
     }
     
     SUBCASE("Datum and heading") {
@@ -176,7 +176,7 @@ TEST_CASE("Raster - Properties and Metadata") {
 
 TEST_CASE("Raster - File I/O") {
     concord::Datum datum{52.0, 5.0, 0.0};
-    geotiv::Raster originalRaster(datum, concord::Euler{0, 0, 0.5}, geotiv::CRS::ENU, 2.0);
+    geotiv::Raster originalRaster(datum, concord::Euler{0, 0, 0.5}, 2.0);
     
     // Add some test grids
     originalRaster.addTerrainGrid(20, 20, "terrain");
