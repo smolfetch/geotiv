@@ -26,7 +26,7 @@ TEST_CASE("GeoTIFF Parser functionality") {
         geotiv::RasterCollection originalRc;
         // CRS is always WGS84
         originalRc.datum = datum;
-        originalRc.heading = heading;
+        originalRc.shift = concord::Pose{concord::Point{0, 0, 0}, heading};
         originalRc.resolution = cellSize;
 
         geotiv::Layer layer;
@@ -38,7 +38,7 @@ TEST_CASE("GeoTIFF Parser functionality") {
         // Set per-layer metadata
         // CRS is always WGS84
         layer.datum = datum;
-        layer.heading = heading;
+        layer.shift = concord::Pose{concord::Point{0, 0, 0}, heading};
         layer.resolution = cellSize;
 
         originalRc.layers.push_back(std::move(layer));
@@ -126,7 +126,7 @@ TEST_CASE("GeoTIFF Parser functionality") {
         geotiv::RasterCollection originalRc;
         // CRS is always WGS84
         originalRc.datum = datum;
-        originalRc.heading = heading;
+        originalRc.shift = concord::Pose{concord::Point{0, 0, 0}, heading};
         originalRc.resolution = cellSize;
 
         // Create 3 layers
@@ -194,7 +194,7 @@ TEST_CASE("GeoTIFF Parser functionality") {
         geotiv::RasterCollection rc;
         // CRS is always WGS84
         rc.datum = datum;
-        rc.heading = heading;
+        rc.shift = concord::Pose{concord::Point{0, 0, 0}, heading};
         rc.resolution = cellSize;
 
         geotiv::Layer layer;

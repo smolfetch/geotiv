@@ -271,7 +271,7 @@ namespace geotiv {
 
             // Parse geotags for each IFD independently (always WGS84)
             concord::Datum layerDatum;                 // Will be set from ImageDescription or use a valid default
-            concord::Euler layerHeading{0, 0, 0};      // default
+            concord::Pose layerShift{concord::Point{0, 0, 0}, concord::Euler{0, 0, 0}};  // default
             double layerResolution = 1.0;              // default
             std::string layerDescription;
             bool datumFromDescription = false;
@@ -293,10 +293,10 @@ namespace geotiv {
                         if (ss >> layerDatum.lat >> layerDatum.lon >> layerDatum.alt) {
                             datumFromDescription = true;
                         }
-                    } else if (tok == "HEADING") {
-                        double y;
-                        if (ss >> y) {
-                            layerHeading = concord::Euler{0, 0, y};
+                    } else if (tok == "SHIFT") {
+                        double x, y, z, yaw;
+                        if (ss >> x >> y >> z >> yaw) {
+                            layerShift = concord::Pose{concord::Point{x, y, z}, concord::Euler{0, 0, yaw}};
                         }
                     }
                 }
@@ -320,7 +320,7 @@ namespace geotiv {
 
             // Set layer-specific metadata (always WGS84)
             L.datum = layerDatum;
-            L.heading = layerHeading;
+            L.shift = layerShift;
             L.resolution = layerResolution;
             L.imageDescription = layerDescription;
 
@@ -335,7 +335,7 @@ namespace geotiv {
             if (firstIFD) {
                 firstIFD = false;
                 rc.datum = layerDatum;
-                rc.heading = layerHeading;
+                rc.shift = layerShift;
                 rc.resolution = layerResolution;
             }
 
@@ -344,11 +344,8 @@ namespace geotiv {
                 throw std::runtime_error("Datum not properly initialized for layer");
             }
 
-            // Always WGS84: Convert WGS coordinates to local ENU space
-            concord::WGS w0{L.datum.lat, L.datum.lon, L.datum.alt};
-            concord::ENU enu0 = w0.toENU(L.datum);
-            concord::Point p0{enu0.x, enu0.y, enu0.z};
-            concord::Pose shift{p0, L.heading};
+            // Use the shift directly - it's already in ENU space
+            concord::Pose shift = L.shift;
 
             concord::Grid<uint8_t> grid(
                 /*rows=*/L.height,
@@ -395,7 +392,7 @@ namespace geotiv {
         os << "GeoTIFF RasterCollection\n"
            << " CRS:        WGS84\n"
            << " DATUM:      " << rc.datum.lat << ", " << rc.datum.lon << ", " << rc.datum.alt << "\n"
-           << " HEADING:    yaw=" << rc.heading.yaw << "\n"
+           << " SHIFT:      " << rc.shift.point.x << ", " << rc.shift.point.y << ", " << rc.shift.point.z << " (yaw=" << rc.shift.angle.yaw << ")\n"
            << " RESOLUTION: " << rc.resolution << " (map units per pixel)\n"
            << " Layers:     " << rc.layers.size() << "\n";
         for (auto const &L : rc.layers) {

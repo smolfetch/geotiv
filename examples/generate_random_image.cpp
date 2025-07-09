@@ -42,7 +42,7 @@ int main() {
         geotiv::RasterCollection rc;
         // CRS is always WGS84
         rc.datum = datum;
-        rc.heading = heading;
+        rc.shift = concord::Pose{concord::Point{0, 0, 0}, heading};
         rc.resolution = cellSize;
 
         // Create layer with the same metadata
@@ -56,7 +56,7 @@ int main() {
         // Set per-layer geospatial metadata
         // CRS is always WGS84
         layer.datum = datum;
-        layer.heading = heading;
+        layer.shift = concord::Pose{concord::Point{0, 0, 0}, heading};
         layer.resolution = cellSize;
 
         rc.layers.push_back(std::move(layer));

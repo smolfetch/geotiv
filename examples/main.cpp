@@ -23,7 +23,7 @@ int main() {
         geotiv::RasterCollection rc;
         // CRS is always WGS84
         rc.datum = datum;
-        rc.heading = heading;
+        rc.shift = concord::Pose{concord::Point{0, 0, 0}, heading};
         rc.resolution = cellSize;
 
         geotiv::Layer L;
@@ -35,7 +35,7 @@ int main() {
         // Set per-layer metadata
         // CRS is always WGS84
         L.datum = datum;
-        L.heading = heading;
+        L.shift = concord::Pose{concord::Point{0, 0, 0}, heading};
         L.resolution = cellSize;
 
         rc.layers.clear();

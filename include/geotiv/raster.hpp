@@ -49,13 +49,14 @@ namespace geotiv {
       private:
         std::vector<GridLayer> grid_layers_;
         concord::Datum datum_;
-        concord::Euler heading_;
+        concord::Pose shift_;
         double resolution_;
 
       public:
         Raster(const concord::Datum &datum = concord::Datum{0.001, 0.001, 1.0},
-               const concord::Euler &heading = concord::Euler{0, 0, 0}, double resolution = 1.0)
-            : datum_(datum), heading_(heading), resolution_(resolution) {}
+               const concord::Pose &shift = concord::Pose{concord::Point{0, 0, 0}, concord::Euler{0, 0, 0}}, 
+               double resolution = 1.0)
+            : datum_(datum), shift_(shift), resolution_(resolution) {}
 
         static Raster fromFile(const std::filesystem::path &path) {
             auto rc = geotiv::ReadRasterCollection(path);
@@ -64,7 +65,7 @@ namespace geotiv {
                 throw std::runtime_error("Raster::fromFile: No layers found in file");
             }
 
-            Raster raster(rc.datum, rc.heading, rc.resolution);
+            Raster raster(rc.datum, rc.shift, rc.resolution);
             // Global properties are now stored in the layers' customTags
 
             for (const auto &layer : rc.layers) {
@@ -104,7 +105,7 @@ namespace geotiv {
         void toFile(const std::filesystem::path &path) const {
             RasterCollection rc;
             rc.datum = datum_;
-            rc.heading = heading_;
+            rc.shift = shift_;
             rc.resolution = resolution_;
             // Global properties are now stored in each layer's customTags
 
@@ -115,12 +116,13 @@ namespace geotiv {
                 layer.height = static_cast<uint32_t>(gridLayer.grid.rows());
                 layer.resolution = resolution_;
                 layer.datum = datum_;
-                layer.heading = heading_;
+                layer.shift = shift_;
                 layer.samplesPerPixel = 1;
                 layer.planarConfig = 1;
 
-                std::string description = "NAME " + gridLayer.name + " TYPE " + gridLayer.type;
-                layer.imageDescription = description;
+                // Let the writer generate the description with CRS/DATUM/SHIFT info
+                // and append grid info if needed
+                layer.imageDescription = "";
 
                 // Transfer custom tags (including global properties)
                 layer.customTags = gridLayer.customTags;
@@ -169,13 +171,8 @@ namespace geotiv {
 
         void addGrid(uint32_t width, uint32_t height, const std::string &name, const std::string &type = "",
                      const std::unordered_map<std::string, std::string> &properties = {}) {
-            // Always WGS84: Convert WGS coordinates to local ENU space
-            concord::WGS w0{datum_.lat, datum_.lon, datum_.alt};
-            concord::ENU enu0 = w0.toENU(datum_);
-            concord::Point p0{enu0.x, enu0.y, enu0.z};
-            concord::Pose shift{p0, heading_};
-
-            concord::Grid<uint8_t> grid(height, width, resolution_, true, shift);
+            // Use the shift_ directly - it's already in ENU space
+            concord::Grid<uint8_t> grid(height, width, resolution_, true, shift_);
             auto props = properties;
             if (!type.empty()) {
                 props["type"] = type;
@@ -241,8 +238,8 @@ namespace geotiv {
         const concord::Datum &getDatum() const { return datum_; }
         void setDatum(const concord::Datum &datum) { datum_ = datum; }
 
-        const concord::Euler &getHeading() const { return heading_; }
-        void setHeading(const concord::Euler &heading) { heading_ = heading; }
+        const concord::Pose &getShift() const { return shift_; }
+        void setShift(const concord::Pose &shift) { shift_ = shift; }
 
         // CRS is always WGS84 - no getter/setter needed
 

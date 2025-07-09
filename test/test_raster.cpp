@@ -20,11 +20,11 @@ TEST_CASE("Raster - Basic Construction") {
     }
     
     SUBCASE("Constructor with all parameters") {
-        geotiv::Raster raster(datum, heading, resolution);
+        geotiv::Raster raster(datum, concord::Pose{concord::Point{0, 0, 0}, heading}, resolution);
         
         CHECK(raster.getDatum().lat == doctest::Approx(52.0));
         CHECK(raster.getDatum().lon == doctest::Approx(5.0));
-        CHECK(raster.getHeading().yaw == doctest::Approx(0.5));
+        CHECK(raster.getShift().angle.yaw == doctest::Approx(0.5));
         // CRS is always WGS84
         CHECK(raster.getResolution() == doctest::Approx(2.0));
     }
@@ -32,7 +32,7 @@ TEST_CASE("Raster - Basic Construction") {
 
 TEST_CASE("Raster - Grid Management") {
     concord::Datum datum{52.0, 5.0, 0.0};
-    geotiv::Raster raster(datum, concord::Euler{0, 0, 0}, 1.0);
+    geotiv::Raster raster(datum, concord::Pose{concord::Point{0, 0, 0}, concord::Euler{0, 0, 0}}, 1.0);
     
     SUBCASE("Add and retrieve grids") {
         raster.addGrid(100, 100, "elevation", "terrain", {{"unit", "meters"}});
@@ -160,12 +160,12 @@ TEST_CASE("Raster - Properties and Metadata") {
         concord::Euler newHeading{0.1, 0.2, 0.3};
         
         raster.setDatum(newDatum);
-        raster.setHeading(newHeading);
+        raster.setShift(concord::Pose{concord::Point{0, 0, 0}, newHeading});
         
         CHECK(raster.getDatum().lat == doctest::Approx(51.0));
         CHECK(raster.getDatum().lon == doctest::Approx(4.0));
         CHECK(raster.getDatum().alt == doctest::Approx(10.0));
-        CHECK(raster.getHeading().yaw == doctest::Approx(0.3));
+        CHECK(raster.getShift().angle.yaw == doctest::Approx(0.3));
     }
     
     SUBCASE("Resolution") {
@@ -176,7 +176,7 @@ TEST_CASE("Raster - Properties and Metadata") {
 
 TEST_CASE("Raster - File I/O") {
     concord::Datum datum{52.0, 5.0, 0.0};
-    geotiv::Raster originalRaster(datum, concord::Euler{0, 0, 0.5}, 2.0);
+    geotiv::Raster originalRaster(datum, concord::Pose{concord::Point{0, 0, 0}, concord::Euler{0, 0, 0.5}}, 2.0);
     
     // Add some test grids
     originalRaster.addTerrainGrid(20, 20, "terrain");

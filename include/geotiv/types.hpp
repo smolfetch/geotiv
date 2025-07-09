@@ -70,8 +70,8 @@ namespace geotiv {
         std::vector<uint32_t> stripByteCounts;
 
         // Per-IFD geospatial metadata (always WGS84)
-        concord::Datum datum;    // lat=lon=alt=0
-        concord::Euler heading;  // roll=pitch=0, yaw=0
+        concord::Datum datum;    // lat=lon=alt=0 (for coordinate transformations)
+        concord::Pose shift;     // position and orientation in ENU space
         double resolution = 1.0; // the representation of one pixel in meters
 
         // Additional GeoTIFF tags per IFD
@@ -110,8 +110,8 @@ namespace geotiv {
         std::vector<Layer> layers; // one entry per IFD
 
         // All coordinate systems are WGS84 by default
-        concord::Datum datum;   // lat=lon=alt=0
-        concord::Euler heading; // roll=pitch=0, yaw=0
+        concord::Datum datum;   // lat=lon=alt=0 (for coordinate transformations)
+        concord::Pose shift;    // position and orientation in ENU space
         double resolution;      // the representation of one pixel in meters
         
         // Helper methods for global properties (stored in first layer's customTags as ASCII tags)

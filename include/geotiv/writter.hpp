@@ -16,7 +16,7 @@ namespace geotiv {
 
     /// Write out all layers in rc as a chained‐IFD GeoTIFF.
     /// Each IFD can have its own CRS/DATUM/HEADING/PixelScale and custom tags.
-    /// 
+    ///
     /// CRS Flavor Handling:
     /// - ENU flavor: Grid data is already in local space, datum provides reference
     /// - WGS flavor: Grid data represents WGS coordinates, datum provides reference
@@ -64,6 +64,7 @@ namespace geotiv {
         std::vector<uint32_t> descOffsets(N);
         std::vector<uint32_t> scaleOffsets(N);
         std::vector<uint32_t> geoKeyOffsets(N);
+        std::vector<uint32_t> tiepointOffsets(N);
 
         for (size_t i = 0; i < N; ++i) {
             auto const &layer = rc.layers[i];
@@ -73,9 +74,11 @@ namespace geotiv {
                 descriptions[i] = layer.imageDescription; // Use custom description if provided
             } else {
                 // Generate geospatial description (always WGS84)
-                descriptions[i] = "CRS WGS84 DATUM " +
-                                  std::to_string(layer.datum.lat) + " " + std::to_string(layer.datum.lon) + " " +
-                                  std::to_string(layer.datum.alt) + " HEADING " + std::to_string(layer.heading.yaw);
+                descriptions[i] = "CRS WGS84 DATUM " + std::to_string(layer.datum.lat) + " " +
+                                  std::to_string(layer.datum.lon) + " " + std::to_string(layer.datum.alt) + " SHIFT " +
+                                  std::to_string(layer.shift.point.x) + " " + std::to_string(layer.shift.point.y) +
+                                  " " + std::to_string(layer.shift.point.z) + " " +
+                                  std::to_string(layer.shift.angle.yaw);
             }
 
             descLengths[i] = uint32_t(descriptions[i].size() + 1);
@@ -87,8 +90,9 @@ namespace geotiv {
         std::vector<uint32_t> customDataSizes(N);
 
         for (size_t i = 0; i < N; ++i) {
-            // Base tags: 9 standard + ImageDescription + PlanarConfig + ModelPixelScale + GeoKeyDirectory + custom tags
-            entryCounts[i] = 9 + 1 + 1 + 1 + 1 + static_cast<uint16_t>(rc.layers[i].customTags.size());
+            // Base tags: 9 standard + ImageDescription + PlanarConfig + ModelPixelScale + GeoKeyDirectory +
+            // ModelTiepointTag + custom tags
+            entryCounts[i] = 9 + 1 + 1 + 1 + 1 + 1 + static_cast<uint16_t>(rc.layers[i].customTags.size());
 
             // Calculate space needed for multi-value custom tag data
             customDataSizes[i] = 0;
@@ -121,6 +125,9 @@ namespace geotiv {
 
             geoKeyOffsets[i] = p;
             p += 56; // GeoKeyDirectory = 56 bytes (4 keys for WGS84)
+
+            tiepointOffsets[i] = p;
+            p += 48; // ModelTiepointTag = 48 bytes (6 doubles)
 
             // Custom tag data offset
             customDataOffsets[i] = p;
@@ -256,6 +263,12 @@ namespace geotiv {
             writeLE32(14);
             writeLE32(geoKeyOffsets[i]);
 
+            // Tag 33922: ModelTiepointTag
+            writeLE16(33922);
+            writeLE16(12);
+            writeLE32(6);
+            writeLE32(tiepointOffsets[i]);
+
             // Write custom tags for this layer
             uint32_t customDataPos = customDataOffsets[i];
             for (const auto &[tag, values] : layer.customTags) {
@@ -298,28 +311,48 @@ namespace geotiv {
             writeLE16(4); // NumberOfKeys
 
             // Key entry 1: GTModelTypeGeoKey
-            writeLE16(1024);                                   // GTModelTypeGeoKey
-            writeLE16(0);                                      // TIFFTagLocation (0 means value is in ValueOffset)
-            writeLE16(1);                                      // Count
-            writeLE16(2);                                      // 2=Geographic (WGS84)
+            writeLE16(1024); // GTModelTypeGeoKey
+            writeLE16(0);    // TIFFTagLocation (0 means value is in ValueOffset)
+            writeLE16(1);    // Count
+            writeLE16(2);    // 2=Geographic (WGS84)
 
             // Key entry 2: GTRasterTypeGeoKey
-            writeLE16(1025);                                   // GTRasterTypeGeoKey
-            writeLE16(0);                                      // TIFFTagLocation
-            writeLE16(1);                                      // Count
-            writeLE16(1);                                      // RasterPixelIsArea
+            writeLE16(1025); // GTRasterTypeGeoKey
+            writeLE16(0);    // TIFFTagLocation
+            writeLE16(1);    // Count
+            writeLE16(1);    // RasterPixelIsArea
 
             // Key entry 3: GeographicTypeGeoKey - EPSG:4326 for WGS84
-            writeLE16(2048);                                   // GeographicTypeGeoKey
-            writeLE16(0);                                      // TIFFTagLocation
-            writeLE16(1);                                      // Count
-            writeLE16(4326);                                   // EPSG:4326 (WGS84)
+            writeLE16(2048); // GeographicTypeGeoKey
+            writeLE16(0);    // TIFFTagLocation
+            writeLE16(1);    // Count
+            writeLE16(4326); // EPSG:4326 (WGS84)
 
             // Key entry 4: GeogAngularUnitsGeoKey - degrees for WGS84
-            writeLE16(2054);                                   // GeogAngularUnitsGeoKey
-            writeLE16(0);                                      // TIFFTagLocation
-            writeLE16(1);                                      // Count
-            writeLE16(9102);                                   // 9102=degree
+            writeLE16(2054); // GeogAngularUnitsGeoKey
+            writeLE16(0);    // TIFFTagLocation
+            writeLE16(1);    // Count
+            writeLE16(9102); // 9102=degree
+
+            // Write ModelTiepointTag for this layer
+            writePos = tiepointOffsets[i];
+            auto const &g = layer.grid;
+            uint32_t W = uint32_t(g.cols());
+            uint32_t H = uint32_t(g.rows());
+
+            // Tiepoint format: I,J,K,X,Y,Z where (I,J,K) are pixel coords and (X,Y,Z) are world coords
+            // We'll tie the center of the image to the world coordinates calculated from shift
+            writeDouble(W / 2.0); // I: pixel column (center)
+            writeDouble(H / 2.0); // J: pixel row (center)
+            writeDouble(0.0);     // K: always 0 for 2D
+
+            // Convert shift (ENU) to WGS84 coordinates using datum
+            concord::ENU enuShift{layer.shift.point.x, layer.shift.point.y, layer.shift.point.z, layer.datum};
+            concord::WGS anchorWGS = enuShift.toWGS();
+
+            writeDouble(anchorWGS.lon); // X: longitude
+            writeDouble(anchorWGS.lat); // Y: latitude
+            writeDouble(anchorWGS.alt); // Z: altitude
 
             // Write custom tag data for this layer
             writePos = customDataOffsets[i];

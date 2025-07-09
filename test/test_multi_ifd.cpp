@@ -34,7 +34,7 @@ TEST_CASE("Advanced Multi-IFD with Per-Layer Tags and Metadata") {
             // Set different coordinate systems per layer
             // CRS is always WGS84
             layer.datum = datum;
-            layer.heading = heading;
+            layer.shift = concord::Pose{concord::Point{0, 0, 0}, heading};
             layer.resolution = cellSize;
             // Don't set custom imageDescription - let the writer generate the proper geospatial one
 
@@ -50,7 +50,7 @@ TEST_CASE("Advanced Multi-IFD with Per-Layer Tags and Metadata") {
         // Set collection defaults from first layer
         // CRS is always WGS84
         rc.datum = rc.layers[0].datum;
-        rc.heading = rc.layers[0].heading;
+        rc.shift = rc.layers[0].shift;
         rc.resolution = rc.layers[0].resolution;
 
         // Write multi-IFD GeoTIFF
@@ -86,7 +86,7 @@ TEST_CASE("Advanced Multi-IFD with Per-Layer Tags and Metadata") {
             CHECK(layer.resolution == doctest::Approx(1.0 + i * 0.5).epsilon(0.001));
 
             // Check heading
-            CHECK(layer.heading.yaw == doctest::Approx(i * 15.0).epsilon(0.1));
+            CHECK(layer.shift.angle.yaw == doctest::Approx(i * 15.0).epsilon(0.1));
 
             // Check custom tags were preserved
             auto it = layer.customTags.find(50000 + i);
@@ -139,7 +139,7 @@ TEST_CASE("Advanced Multi-IFD with Per-Layer Tags and Metadata") {
             layer.planarConfig = 1;
             // CRS is always WGS84
             layer.datum = surveyLocation;
-            layer.heading = {0, 0, 0};
+            layer.shift = concord::Pose{concord::Point{0, 0, 0}, concord::Euler{0, 0, 0}};
             layer.resolution = cellSize;
             layer.imageDescription = "Time-series data point " + std::to_string(t);
 
@@ -154,7 +154,7 @@ TEST_CASE("Advanced Multi-IFD with Per-Layer Tags and Metadata") {
         // Set collection metadata from first layer
         // CRS is always WGS84
         timeSeries.datum = timeSeries.layers[0].datum;
-        timeSeries.heading = timeSeries.layers[0].heading;
+        timeSeries.shift = timeSeries.layers[0].shift;
         timeSeries.resolution = timeSeries.layers[0].resolution;
 
         // Write time-series GeoTIFF
