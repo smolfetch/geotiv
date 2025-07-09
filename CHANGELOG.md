@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.2.0] - 2025-07-09
+
+### <!-- 7 -->⚙️ Miscellaneous Tasks
+
+- Configure CI for Docker image builds
+
 ## [1.1.4] - 2025-07-03
 
 ### <!-- 2 -->🚜 Refactor

@@ -21,9 +21,9 @@ int main() {
 
         // --- 2) Build a RasterCollection around it ---
         geotiv::RasterCollection rc;
-        rc.crs = geotiv::CRS::WGS;
+        // CRS is always WGS84
         rc.datum = datum;
-        rc.heading = heading;
+        rc.shift = concord::Pose{concord::Point{0, 0, 0}, heading};
         rc.resolution = cellSize;
 
         geotiv::Layer L;
@@ -33,9 +33,9 @@ int main() {
         L.samplesPerPixel = 1; // single‐band
         L.planarConfig = 1;    // chunky
         // Set per-layer metadata
-        L.crs = geotiv::CRS::WGS;
+        // CRS is always WGS84
         L.datum = datum;
-        L.heading = heading;
+        L.shift = concord::Pose{concord::Point{0, 0, 0}, heading};
         L.resolution = cellSize;
 
         rc.layers.clear();

@@ -54,9 +54,9 @@ int main() {
 
         // Create RasterCollection
         geotiv::RasterCollection rc;
-        rc.crs = geotiv::CRS::WGS;
+        // CRS is always WGS84
         rc.datum = datum;
-        rc.heading = heading;
+        rc.shift = concord::Pose{concord::Point{0, 0, 0}, heading};
         rc.resolution = cellSize;
 
         // Create layer
@@ -68,9 +68,9 @@ int main() {
         layer.planarConfig = 1;    // chunky format
 
         // Set per-layer geospatial metadata
-        layer.crs = geotiv::CRS::WGS;
+        // CRS is always WGS84
         layer.datum = datum;
-        layer.heading = heading;
+        layer.shift = concord::Pose{concord::Point{0, 0, 0}, heading};
         layer.resolution = cellSize;
 
         rc.layers.push_back(std::move(layer));

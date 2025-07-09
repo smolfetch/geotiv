@@ -25,9 +25,9 @@ TEST_CASE("GeoTIFF Writer functionality") {
 
         // Build RasterCollection
         geotiv::RasterCollection rc;
-        rc.crs = geotiv::CRS::WGS;
+        // CRS is always WGS84
         rc.datum = datum;
-        rc.heading = heading;
+        rc.shift = concord::Pose{concord::Point{0, 0, 0}, heading};
         rc.resolution = cellSize;
 
         geotiv::Layer layer;
@@ -37,9 +37,9 @@ TEST_CASE("GeoTIFF Writer functionality") {
         layer.samplesPerPixel = 1;
         layer.planarConfig = 1;
         // Set per-layer metadata
-        layer.crs = geotiv::CRS::WGS;
+        // CRS is always WGS84
         layer.datum = datum;
-        layer.heading = heading;
+        layer.shift = concord::Pose{concord::Point{0, 0, 0}, heading};
         layer.resolution = cellSize;
 
         rc.layers.push_back(std::move(layer));
@@ -75,9 +75,9 @@ TEST_CASE("GeoTIFF Writer functionality") {
         }
 
         geotiv::RasterCollection rc;
-        rc.crs = geotiv::CRS::ENU;
+        // CRS is always WGS84
         rc.datum = datum;
-        rc.heading = heading;
+        rc.shift = concord::Pose{concord::Point{0, 0, 0}, heading};
         rc.resolution = cellSize;
 
         geotiv::Layer layer;
@@ -87,9 +87,9 @@ TEST_CASE("GeoTIFF Writer functionality") {
         layer.samplesPerPixel = 1;
         layer.planarConfig = 1;
         // Set per-layer metadata
-        layer.crs = geotiv::CRS::ENU;
+        // CRS is always WGS84
         layer.datum = datum;
-        layer.heading = heading;
+        layer.shift = concord::Pose{concord::Point{0, 0, 0}, heading};
         layer.resolution = cellSize;
 
         rc.layers.push_back(std::move(layer));
@@ -114,9 +114,9 @@ TEST_CASE("GeoTIFF Writer functionality") {
         concord::Pose shift{concord::Point{0, 0, 0}, heading};
 
         geotiv::RasterCollection rc;
-        rc.crs = geotiv::CRS::WGS;
+        // CRS is always WGS84
         rc.datum = datum;
-        rc.heading = heading;
+        rc.shift = concord::Pose{concord::Point{0, 0, 0}, heading};
         rc.resolution = cellSize;
 
         // Create two layers with different patterns
@@ -136,9 +136,9 @@ TEST_CASE("GeoTIFF Writer functionality") {
             layer.samplesPerPixel = 1;
             layer.planarConfig = 1;
             // Set per-layer metadata - different for each layer
-            layer.crs = geotiv::CRS::WGS;
+            // CRS is always WGS84
             layer.datum = {datum.lat + layerIdx * 0.01, datum.lon + layerIdx * 0.01, datum.alt + layerIdx * 10};
-            layer.heading = heading;
+            layer.shift = concord::Pose{concord::Point{0, 0, 0}, heading};
             layer.resolution = cellSize + layerIdx * 0.1;
 
             rc.layers.push_back(std::move(layer));

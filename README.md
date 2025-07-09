@@ -10,7 +10,7 @@ A modern C++20 library for reading and writing GeoTIFF files with integrated geo
 - **Multi-layer/Multi-IFD Support**: Handle complex GeoTIFF files with multiple image layers, each IFD with its own tags
 - **Per-IFD Geospatial Metadata**: Each layer can have independent coordinate systems, datums, and resolutions
 - **Comprehensive Tag Support**: Full TIFF tag support including custom tags per IFD
-- **Coordinate System Integration**: Built-in support for WGS84 and ENU coordinate systems via Concord
+- **ENU Shift-Based Positioning**: Use local ENU coordinates for precise spatial positioning with automatic WGS84 conversion
 - **Geospatial Grid Conversion**: Automatic conversion between TIFF pixel data and georeferenced coordinate grids
 - **8-bit Raster Support**: Optimized for 8-bit grayscale raster data
 - **Header-only Library**: Easy integration with CMake FetchContent or as a Git submodule
@@ -31,7 +31,7 @@ const auto& layer = rasterCollection.layers[0];
 const auto& grid = layer.grid;
 
 // Get pixel value at specific grid coordinates
-uint8_t pixelValue = grid(row, col).second;
+uint8_t pixelValue = grid(row, col);
 
 // Write modified data back to GeoTIFF
 geotiv::WriteRasterCollection(rasterCollection, "output.tif");
@@ -40,55 +40,45 @@ geotiv::WriteRasterCollection(rasterCollection, "output.tif");
 ### Creating GeoTIFF from Scratch
 
 ```cpp
-// Create a georeferenced grid
-size_t rows = 100, cols = 200;
-double cellSize = 2.0; // meters per pixel
-concord::Datum datum{48.0, 11.0, 500.0}; // lat, lon, alt
-concord::Euler heading{0, 0, 0}; // no rotation
+// Create a georeferenced raster using the high-level API
+concord::Datum datum{48.0, 11.0, 500.0};                    // WGS84 reference point
+concord::Pose shift{concord::Point{100.0, 200.0, 0.0},     // ENU position: 100m East, 200m North
+                    concord::Euler{0, 0, 0}};               // No rotation
+double resolution = 2.0;                                    // 2 meters per pixel
 
-concord::Grid<uint8_t> grid(rows, cols, cellSize, datum, true);
+geotiv::Raster raster(datum, shift, resolution);
 
-// Fill with data (e.g., elevation, classification, etc.)
-for (size_t r = 0; r < rows; ++r) {
-    for (size_t c = 0; c < cols; ++c) {
-        grid(r, c).second = computePixelValue(r, c);
+// Add a grid layer
+uint32_t width = 200, height = 100;
+raster.addGrid(width, height, "elevation", "terrain");
+
+// Fill with data
+auto& grid = raster.getGrid("elevation");
+for (uint32_t r = 0; r < height; ++r) {
+    for (uint32_t c = 0; c < width; ++c) {
+        grid.grid(r, c) = computePixelValue(r, c);
     }
 }
 
-// Package into RasterCollection
-geotiv::RasterCollection rc;
-
-geotiv::Layer layer;
-layer.grid = std::move(grid);
-layer.width = cols;
-layer.height = rows;
-layer.samplesPerPixel = 1;
-// Set per-layer geospatial metadata
-layer.crs = geotiv::CRS::WGS;
-layer.datum = datum;
-layer.heading = heading;
-layer.resolution = cellSize;
-
-rc.layers.push_back(std::move(layer));
-
-// Write to GeoTIFF
-geotiv::WriteRasterCollection(rc, "generated.tif");
+// Save as GeoTIFF
+raster.toFile("generated.tif");
 ```
 
 ## 🔧 Core Components
 
 ### Data Structures
 
+- **`geotiv::Raster`**: High-level interface for creating and managing georeferenced raster data
 - **`geotiv::RasterCollection`**: Container for one or more georeferenced raster layers
 - **`geotiv::Layer`**: Individual raster layer with pixel data and metadata
-- **`concord::Grid<uint8_t>`**: Georeferenced grid with coordinate system integration
+- **`concord::Grid<uint8_t>`**: Georeferenced grid with ENU shift-based positioning
 
 ### Multi-IFD (Image File Directory) Support
 
 Geotiv provides comprehensive support for multi-IFD GeoTIFF files, where each IFD represents a separate image layer with its own metadata and geospatial properties:
 
 #### IFD-Specific Features:
-- **Independent Geospatial Parameters**: Each layer can have its own coordinate system (CRS), datum, heading, and resolution
+- **Independent Geospatial Parameters**: Each layer can have its own datum, ENU shift, and resolution
 - **Per-IFD Tag Storage**: Every IFD maintains its own set of TIFF tags including:
   - Standard TIFF tags (ImageWidth, ImageLength, BitsPerSample, etc.)
   - GeoTIFF-specific tags (ModelPixelScaleTag, GeoKeyDirectoryTag, etc.)
@@ -99,9 +89,8 @@ Geotiv provides comprehensive support for multi-IFD GeoTIFF files, where each IF
 #### Per-Layer Metadata:
 ```cpp
 geotiv::Layer layer;
-layer.crs = geotiv::CRS::WGS;           // Coordinate reference system
-layer.datum = {47.5, 8.5, 200.0};       // Lat, lon, altitude
-layer.heading = {0, 0, 30};              // Roll, pitch, yaw rotation
+layer.datum = {47.5, 8.5, 200.0};       // WGS84 reference point (lat, lon, alt)
+layer.shift = {concord::Point{100, 200, 0}, concord::Euler{0, 0, 0.5}}; // ENU position and rotation
 layer.resolution = 2.0;                  // Meters per pixel
 layer.imageDescription = "Layer 1 data"; // Custom description
 layer.customTags[50000] = {42, 100};     // Custom application tags
@@ -114,8 +103,8 @@ geotiv::RasterCollection rc;
 // Create multiple layers with different properties
 for (int i = 0; i < 3; ++i) {
     geotiv::Layer layer;
-    layer.crs = (i == 0) ? geotiv::CRS::WGS : geotiv::CRS::ENU;
     layer.datum = {47.0 + i * 0.1, 8.0 + i * 0.1, 100.0 + i * 50};
+    layer.shift = {concord::Point{i * 50.0, i * 100.0, 0}, concord::Euler{0, 0, i * 0.1}};
     layer.resolution = 1.0 + i * 0.5;
     
     // Each layer gets its own grid and metadata
@@ -138,30 +127,27 @@ geotiv::WriteRasterCollection(rc, "multi_layer.tif");
 
 ### Coordinate System Support
 
-Geotiv supports two coordinate system flavors for GeoTIFF files:
+Geotiv uses a shift-based coordinate system for maximum flexibility and precision:
 
-#### Coordinate Reference Systems (CRS)
-- **`geotiv::CRS::WGS`**: World Geodetic System 1984 (geographic coordinates)
-  - Data stored in latitude/longitude coordinates
-  - Converted to local ENU space during parsing for grid operations
-- **`geotiv::CRS::ENU`**: East-North-Up local coordinate system
-  - Data already in local space coordinates
-  - No conversion needed during parsing
+#### ENU Shift-Based Positioning
+- **WGS84 Reference**: All coordinate systems use WGS84 with EPSG:4326
+- **ENU Shift**: Local positioning in East-North-Up coordinates relative to datum
+- **Automatic Conversion**: ENU coordinates automatically converted to WGS84 for GeoTIFF storage
 
 #### Key Features:
-- **Datum always required**: Provides the reference point for coordinate transformations
-- **Per-layer CRS**: Each IFD can have its own coordinate system
-- **Automatic conversion**: Proper handling of coordinate transformations during I/O
-- **Flexible workflows**: Mix WGS and ENU layers in the same file
+- **Datum**: WGS84 reference point for coordinate transformations
+- **Shift**: ENU position and orientation (concord::Pose) for precise grid placement
+- **Automatic georeferencing**: ModelTiepointTag maps image center to calculated WGS84 coordinates
+- **QGIS Compatible**: Proper georeferencing tags for seamless GIS integration
 
 ```cpp
-// WGS flavor - geographic coordinates
-layer.crs = geotiv::CRS::WGS;
-layer.datum = {47.5, 8.5, 200.0}; // lat, lon, alt reference
+// Coordinate system setup
+concord::Datum datum{47.5, 8.5, 200.0};                    // WGS84 reference point
+concord::Pose shift{concord::Point{100.0, 200.0, 0.0},     // ENU position: 100m East, 200m North
+                    concord::Euler{0, 0, 0.5}};             // 0.5 radians yaw rotation
 
-// ENU flavor - local coordinates  
-layer.crs = geotiv::CRS::ENU;
-layer.datum = {47.5, 8.5, 200.0}; // still need datum as reference
+// The raster will be positioned at datum + shift in ENU space
+geotiv::Raster raster(datum, shift, resolution);
 ```
 
 ## 📊 Supported Features
@@ -172,8 +158,11 @@ layer.datum = {47.5, 8.5, 200.0}; // still need datum as reference
 | Writing GeoTIFF | ✅ Full | ✅ Yes |
 | Multi-layer files | ✅ Yes | ✅ Independent |
 | 8-bit grayscale | ✅ Yes | ✅ Per layer |
-| WGS84 coordinates | ✅ Yes | ✅ Per layer |
-| ENU coordinates | ✅ Yes | ✅ Per layer |
+| WGS84 coordinates | ✅ Yes | ✅ Standard |
+| ENU shift positioning | ✅ Yes | ✅ Per layer |
+| EPSG:4326 support | ✅ Yes | ✅ Automatic |
+| ModelTiepointTag | ✅ Yes | ✅ Per layer |
+| QGIS compatibility | ✅ Yes | ✅ Full |
 | Pixel scaling | ✅ Yes | ✅ Per layer |
 | Strip-based TIFF | ✅ Yes | ✅ Yes |
 | Little/Big endian | ✅ Both | ✅ Yes |
@@ -199,7 +188,8 @@ The library supports comprehensive TIFF tag handling:
 
 #### GeoTIFF Tags (per IFD):
 - **33550**: ModelPixelScaleTag (pixel scale in X, Y, Z)
-- **34735**: GeoKeyDirectoryTag (coordinate system keys)
+- **33922**: ModelTiepointTag (image-to-world coordinate mapping)
+- **34735**: GeoKeyDirectoryTag (coordinate system keys including EPSG:4326)
 - **34736**: GeoDoubleParamsTag (floating-point parameters)
 - **34737**: GeoAsciiParamsTag (string parameters)
 
@@ -263,7 +253,7 @@ make test
 - **Time-Series Data**: Store temporal raster datasets with different timestamps per IFD
 - **Multi-Resolution Pyramids**: Create resolution pyramids with different scales per layer
 - **Multi-Spectral Imagery**: Handle different spectral bands with independent geospatial parameters
-- **Heterogeneous Coordinate Systems**: Mix WGS84 and local coordinate systems in the same file
+- **Precise Spatial Positioning**: Use ENU shift coordinates for sub-meter accuracy
 - **Metadata Preservation**: Maintain application-specific tags and metadata per image layer
 
 ### Example: Time-Series Multi-IFD GeoTIFF
@@ -272,8 +262,8 @@ geotiv::RasterCollection timeSeries;
 
 for (const auto& timestamp : timestamps) {
     geotiv::Layer layer;
-    layer.crs = geotiv::CRS::WGS;
     layer.datum = surveyLocation;
+    layer.shift = {concord::Point{0, 0, 0}, concord::Euler{0, 0, 0}}; // No spatial offset
     layer.resolution = 0.5; // 50cm resolution
     
     // Store timestamp in custom tag
@@ -290,6 +280,36 @@ for (const auto& timestamp : timestamps) {
 
 geotiv::WriteRasterCollection(timeSeries, "temporal_survey.tif");
 ```
+
+## 🌐 Shift-Based Coordinate System
+
+Geotiv uses a sophisticated shift-based coordinate system that provides both precision and flexibility:
+
+### **Datum vs Shift**
+- **Datum**: WGS84 reference point (lat, lon, alt) for coordinate transformations
+- **Shift**: ENU position and orientation relative to datum for precise grid placement
+
+### **Coordinate Flow**
+1. **Grid Creation**: Uses ENU shift directly for `concord::Grid` positioning
+2. **GeoTIFF Storage**: Converts ENU shift to WGS84 for ModelTiepointTag
+3. **GIS Integration**: QGIS reads ModelTiepointTag for proper georeferencing
+
+### **Example: Precise Positioning**
+```cpp
+// Survey area with known WGS84 reference
+concord::Datum surveyDatum{52.1234, 5.6789, 45.0};
+
+// Position grid 150m East, 300m North of datum, rotated 15 degrees
+concord::Pose gridShift{concord::Point{150.0, 300.0, 0.0}, 
+                        concord::Euler{0, 0, 0.262}};  // 15 degrees in radians
+
+geotiv::Raster raster(surveyDatum, gridShift, 0.5);  // 50cm resolution
+```
+
+### **Storage Format**
+- **ImageDescription**: `"CRS WGS84 DATUM lat lon alt SHIFT x y z yaw"`
+- **ModelTiepointTag**: Maps image center to WGS84 coordinates
+- **Automatic Conversion**: ENU coordinates converted to WGS84 using datum
 
 ### Traditional Use Cases
 
